@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NODAL // Pro Studio</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+  
+  :root {
+    --bg-main: #0a0a0a;
+    --panel-bg: #141414;
+    --text-primary: #f0f0f0;
+    --text-muted: #777777;
+    --accent: #ffeb3b; 
+    --accent-hover: #ffd600;
+    --border: #2a2a2a;
+    --radius: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body { font-family: 'IBM Plex Mono', monospace; background: var(--bg-main); color: var(--text-primary); font-size: 11px; height: 100vh; overflow: hidden; }
+  
+  .app-shell { display: grid; grid-template-columns: 380px 1fr; height: 100vh; overflow: hidden; }
+  @media (max-width: 900px) { 
+    .app-shell { grid-template-columns: 1fr; height: auto; overflow: auto; } 
+    body { height: auto; overflow: auto; }
+    .right-panel { height: 65vh !important; } 
+  }
+  
+  .left-panel { background: var(--panel-bg); border-right: 1px solid var(--border); overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; height: 100%; }
+  .left-panel::-webkit-scrollbar { width: 6px; }
+  .left-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  
+  .brand { border-bottom: 1px solid var(--border); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .brand h1 { font-size: 22px; font-weight: 700; letter-spacing: 0.05em; color: var(--accent); line-height: 1; }
+  .brand p { font-size: 9px; color: var(--text-muted); text-transform: uppercase; margin-top: 6px; }
+
+  .history-nav { display: flex; gap: 6px; }
+  .history-nav button { background: #222; border: 1px solid var(--border); color: #fff; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px; transition: 0.2s; }
+  .history-nav button:hover:not(:disabled) { background: var(--text-primary); color: #000; }
+  .history-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .section { background: #1a1a1a; border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .section-title { font-size: 10px; font-weight: 700; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 8px; }
+  .section-title::before { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; }
+  
+  .lock-btn { font-size: 14px; cursor: pointer; opacity: 0.3; transition: all 0.2s; user-select: none; background: none; border: none; padding: 0; outline: none; filter: grayscale(1); }
+  .lock-btn:hover { opacity: 0.8; }
+  .lock-btn.locked { opacity: 1; filter: grayscale(0); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 10px; }
+  .control { display: flex; flex-direction: column; gap: 6px; }
+  .control.full { grid-column: 1 / -1; }
+  
+  label { font-size: 9px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;}
+  .val-display { color: var(--accent); font-weight: 700; }
+  
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 4px; background: var(--border); outline: none; border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
+  input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+  input[type="color"] { width: 100%; height: 26px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: transparent; padding: 0; }
+  select, input[type="text"] { width: 100%; padding: 6px 8px; background: #111; border: 1px solid var(--border); color: var(--text-primary); font-family: inherit; font-size: 10px; border-radius: 4px; outline: none; }
+  input[type="text"]:focus { border-color: var(--accent); }
+  
+  .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .toggle-btn { background: #111; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 4px; font-size: 9px; text-transform: uppercase; cursor: pointer; border-radius: 4px; text-align: center; font-weight: 600; transition: all 0.2s; }
+  .toggle-btn:hover { border-color: #555; color: #ccc; }
+  .toggle-btn.active { background: var(--text-primary); color: var(--bg-main); border-color: var(--text-primary); }
+  
+  .shape-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; }
+  .shape-btn { background: #111; border: 1px solid var(--border); padding: 6px 0; font-size: 12px; cursor: pointer; border-radius: 4px; transition: all 0.2s; color: var(--text-muted); font-weight: 700; display:flex; align-items:center; justify-content:center;}
+  .shape-btn:hover { border-color: #555; color: #ccc; }
+  .shape-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .action-btn { width: 100%; padding: 12px; background: var(--accent); color: #000; font-family: inherit; font-weight: 700; font-size: 11px; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; border-radius: var(--radius); transition: all 0.2s; }
+  .action-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+  .action-btn.secondary { background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); margin-top: auto; }
+  .action-btn.secondary:hover { background: var(--text-primary); color: var(--bg-main); }
+  .action-btn.random { background: #fff; margin-top: auto; }
+
+  .preset-row { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+  .preset-row button { flex: 1; padding: 6px 2px; font-size: 8px; font-weight: 700; cursor: pointer; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; text-transform: uppercase; transition: 0.2s; text-align: center; }
+  .preset-row button:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  .right-panel { display: flex; flex-direction: column; padding: 20px; height: 100vh; overflow: hidden; }
+  .preview-wrapper { flex: 1; min-height: 0; background: #111; border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px; }
+  
+  #svgHost { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 10px; }
+  #svgHost svg { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8); transition: transform 0.2s; }
+  
+  .export-bar { margin-top: 16px; display: flex; gap: 12px; align-items: center; height: 42px; flex-shrink: 0; background: var(--panel-bg); padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); }
+  .export-bar select { width: auto; min-width: 130px; height: 100%; border: none; background: transparent; font-weight: 600;}
+  .export-bar .action-btn { height: 100%; margin: 0; padding: 0 16px; display: flex; align-items: center; justify-content: center; width: auto; flex: 1;}
+
+  .checkbox-wrap { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-muted); cursor: pointer; margin-top: 2px; }
+  .checkbox-wrap input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+  .custom-presets-container { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .saved-presets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .saved-preset-btn { background: #222; border: 1px solid var(--border); color: #ddd; padding: 6px; font-size: 9px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
+  .saved-preset-btn:hover { background: #333; }
+  .del-preset { color: #ff5555; background: none; border: none; cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 12px;}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <div class="left-panel">
+    
+    <div class="brand">
+      <div>
+        <h1>NODAL ENGINE</h1>
+        <p>Síntesis Gráfica Paramétrica</p>
+      </div>
+      <div class="history-nav">
+        <button id="btnUndo" disabled title="Deshacer (Ctrl+Z)">↩</button>
+        <button id="btnRedo" disabled title="Rehacer (Ctrl+Y)">↪</button>
+      </div>
+    </div>
+
+    <!-- Gestión de Presets -->
+    <div class="section">
+      <div class="section-header" style="margin-bottom:8px; cursor:pointer;" onclick="document.getElementById('presetsWrap').style.display = document.getElementById('presetsWrap').style.display==='none'?'block':'none'">
+        <div class="section-title" style="color: var(--accent);">Estudio Presets (Galería)</div>
+        <span style="font-size:10px; color:var(--text-muted);">▼</span>
+      </div>
+      <div id="presetsWrap">
+          <div class="preset-row">
+            <button onclick="applyStudioPreset('moire')">Moiré Óptico</button>
+            <button onclick="applyStudioPreset('data')">Data Matrix</button>
+            <button onclick="applyStudioPreset('typo')">Typo Scatter</button>
+            <button onclick="applyStudioPreset('gooey')">Gooey Cells</button>
+          </div>
+          <div class="preset-row">
+            <button onclick="applyStudioPreset('swiss')">Swiss Grid</button>
+            <button onclick="applyStudioPreset('neon')">Neon Beats</button>
+            <button onclick="applyStudioPreset('pastel')">Pastel Warp</button>
+            <button onclick="applyStudioPreset('sand')">Cymatics Sand</button>
+          </div>
+          
+          <div class="custom-presets-container" style="border-top: 1px solid #333; margin-top: 8px; padding-top: 8px;">
+            <div style="display: flex; gap: 6px;">
+              <input type="text" id="newPresetName" placeholder="Guardar mi preset...">
+              <button class="action-btn" id="btnSavePreset" style="width: auto; padding: 6px 12px;">+</button>
+            </div>
+            <div class="saved-presets-grid" id="savedPresetsList"></div>
+          </div>
+      </div>
+    </div>
+
+    <!-- Visibilidad de Capas -->
+    <div class="section" style="padding: 10px 14px;">
+      <div class="grid-2">
+        <div class="control full">
+          <label class="checkbox-wrap" style="color:#fff;"><input type="checkbox" id="drawForeground" checked> 1. Mostrar Formas Principales</label>
+          <label class="checkbox-wrap" style="color:#fff;"><input type="checkbox" id="waveEnabled" checked> 2. Mostrar Patrón Óptico (Fondo)</label>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:8px;">
+        <button class="action-btn" id="btnSoloBg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">⚡ SOLO FONDO</button>
+        <button class="action-btn" id="btnSoloFg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">⚡ SOLO FORMAS</button>
+      </div>
+    </div>
+
+    <!-- Algoritmo Principal -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Matriz Estructural</div>
+        <button class="lock-btn" data-lock="pattern" title="Bloquear matriz">🔓</button>
+      </div>
+      <div class="toggle-grid" id="patternToggles">
+        <button class="toggle-btn active" data-val="chladni">Placa Chladni 2D</button>
+        <button class="toggle-btn" data-val="chladniRadial">Chladni Polar Radial</button>
+        <button class="toggle-btn" data-val="dataMatrix">Data Matrix (QuadTree)</button>
+        <button class="toggle-btn" data-val="matrixWarp">Warp Matrix</button>
+        <button class="toggle-btn" data-val="concentricWaves">Rizos Concéntricos</button>
+        <button class="toggle-btn" data-val="sequencer">Secuenciador / Pistas</button>
+        <button class="toggle-btn" data-val="ghostStrings">Hilos Transientes</button>
+        <button class="toggle-btn" data-val="dataScatter">Dispersión de Datos</button>
+      </div>
+    </div>
+
+    <!-- Composición Geométrica -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Composición Geométrica</div>
+        <button class="lock-btn" data-lock="shapes" title="Bloquear formas">🔓</button>
+      </div>
+      <div class="shape-grid" id="shapeToggles">
+        <button class="shape-btn active" data-val="circle" title="Círculos">●</button>
+        <button class="shape-btn" data-val="rect" title="Cuadrados">■</button>
+        <button class="shape-btn" data-val="triangle" title="Triángulos">▲</button>
+        <button class="shape-btn" data-val="line" title="Líneas">|</button>
+        <button class="shape-btn" data-val="hash" title="Trama / Hash">▤</button>
+        <button class="shape-btn" data-val="text" title="Tipografía (Letras)">A</button>
+      </div>
+      <div class="grid-2" style="margin-top: 8px;">
+        <div class="control full">
+          <input type="text" id="customText" value="ITERATION" placeholder="Texto base (ej: N O D A L)">
+        </div>
+        <div class="control">
+          <label>Rotación Estática <span class="val-display" id="valAngle">0</span>°</label>
+          <input type="range" id="paramAngle" min="0" max="360" value="0" step="15">
+        </div>
+        <div class="control">
+          <label>Textura Interna</label>
+          <select id="paramFillType">
+            <option value="solid" selected>Color Sólido</option>
+            <option value="spectrogram">Espectrograma</option>
+            <option value="stripesV">Líneas Verticales</option>
+            <option value="stripesH">Líneas Horizontales</option>
+            <option value="dots">Punteado (Halftone)</option>
+          </select>
+        </div>
+        <div class="control" id="ctrlTexDen">
+          <label>Densidad Trama <span class="val-display" id="valTexDen">4.0</span></label>
+          <input type="range" id="paramTexDen" min="1" max="20" value="4" step="0.5">
+        </div>
+      </div>
+    </div>
+
+    <!-- Arte Óptico y Fondos -->
+    <div class="section" style="border-color: var(--accent);">
+      <div class="section-header">
+        <div class="section-title" style="color:var(--accent);">Arte Óptico (Background)</div>
+        <button class="lock-btn" data-lock="wave" title="Bloquear óptica">🔓</button>
+      </div>
+      <div class="grid-2">
+        <div class="control full" id="ctrlWaveStyle">
+          <label>Estilo Generativo</label>
+          <select id="waveStyle">
+            <option value="tin_warp">Moiré Distorsionado (Lente focal)</option>
+            <option value="chladni_sand">Arena Acústica (Cymatics puro)</option>
+            <option value="chladni_bg">Chladni Óptico (Halftone)</option>
+            <option value="pixel_grid">Trama Pixelada (Ref Iteration)</option>
+            <option value="concentric">Anillos Radiales</option>
+            <option value="sine">Ondas Fluidas</option>
+          </select>
+        </div>
+        <div class="control" id="ctrlWaveRows">
+          <label>Densidad/Pistas <span class="val-display" id="valWaveRows">24</span></label>
+          <input type="range" id="waveRows" min="2" max="150" value="24" step="1">
+        </div>
+        <div class="control" id="ctrlWaveAmp">
+          <label>Amplitud Curva <span class="val-display" id="valWaveAmp">2.0</span></label>
+          <input type="range" id="waveAmp" min="0" max="8" value="2.0" step="0.1">
+        </div>
+        <div class="control" id="ctrlWaveFreq">
+          <label>Frecuencia Ola <span class="val-display" id="valWaveFreq">3.0</span></label>
+          <input type="range" id="waveFreq" min="0.5" max="20" value="3" step="0.5">
+        </div>
+        <div class="control" id="ctrlWaveBlur">
+          <label>Blur Fondo <span class="val-display" id="valWaveBlur">0.0</span></label>
+          <input type="range" id="waveBlur" min="0" max="20" value="0" step="0.5">
+        </div>
+        <div class="control full" id="ctrlWaveColor">
+          <label>Color Óptico</label>
+          <input type="color" id="waveColor" value="#333333">
+        </div>
+        <div class="control full" id="ctrlWaveSync">
+          <label class="checkbox-wrap" style="color:var(--accent);">
+            <input type="checkbox" id="waveSyncColor" checked> Fusión Óptica (El fondo recorta la figura)
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Morfología -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Física y Masa</div>
+        <button class="lock-btn" data-lock="morph" title="Bloquear morfología">🔓</button>
+      </div>
+      <div class="grid-2">
+        <div class="control" id="ctrlN">
+          <label>Frecuencia N <span class="val-display" id="valN">4.0</span></label>
+          <input type="range" id="paramN" min="1" max="15" value="4" step="0.5">
+        </div>
+        <div class="control" id="ctrlM">
+          <label>Frecuencia M <span class="val-display" id="valM">7.0</span></label>
+          <input type="range" id="paramM" min="1" max="15" value="7" step="0.5">
+        </div>
+        <div class="control full">
+          <label>Densidad de Formas <span class="val-display" id="valDen">1800</span></label>
+          <input type="range" id="paramDen" min="50" max="8000" value="1800" step="50">
+        </div>
+        <div class="control">
+          <label>Tamaño Mín. <span class="val-display" id="valMinS">0.0</span></label>
+          <input type="range" id="paramMinS" min="0" max="30" value="0" step="0.5">
+        </div>
+        <div class="control">
+          <label>Tamaño Máx. <span class="val-display" id="valMaxS">12.0</span></label>
+          <input type="range" id="paramMaxS" min="0.5" max="120" value="12" step="0.5">
+        </div>
+        <div class="control full">
+          <label>Corte (Threshold) <span class="val-display" id="valThresh">0.35</span></label>
+          <input type="range" id="paramThresh" min="0.01" max="1.5" value="0.35" step="0.01">
+        </div>
+      </div>
+    </div>
+
+    <!-- Grilla y Deformación -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Modulación Espacial (Warp)</div>
+        <button class="lock-btn" data-lock="grid" title="Bloquear grilla">🔓</button>
+      </div>
+      <div class="grid-2">
+        <div class="control">
+          <label>Warp X <span class="val-display" id="valWarpX">0.00</span></label>
+          <input type="range" id="warpX" min="0" max="0.5" value="0.0" step="0.01">
+        </div>
+        <div class="control">
+          <label>Warp Y <span class="val-display" id="valWarpY">0.00</span></label>
+          <input type="range" id="warpY" min="0" max="0.5" value="0.0" step="0.01">
+        </div>
+        <div class="control full">
+          <label class="checkbox-wrap"><input type="checkbox" id="warpTargetFg" checked> Deformar Figuras</label>
+          <label class="checkbox-wrap"><input type="checkbox" id="warpTargetBg" checked> Deformar Fondo Óptico / Grilla</label>
+        </div>
+        
+        <div class="control" style="grid-column: 1 / -1; margin-top:8px;">
+          <label style="border-bottom: 1px solid var(--border); padding-bottom:4px; margin-bottom:4px;">Grilla de Inversión Estática</label>
+        </div>
+        <div class="control">
+          <label>Celdas Divisorias</label>
+          <select id="paramGridN">
+            <option value="1">1 × 1 (Off)</option>
+            <option value="2">2 × 2</option>
+            <option value="4" selected>4 × 4</option>
+            <option value="6">6 × 6</option>
+            <option value="12">12 × 12 (Densa)</option>
+            <option value="24">24 × 24 (Micro)</option>
+          </select>
+        </div>
+        <div class="control">
+          <label class="checkbox-wrap" style="margin-top:16px;"><input type="checkbox" id="paramGridLines"> Trazar ejes grilla</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lentes y Estilo -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-title">Lentes, Efectos y Paleta</div>
+        <button class="lock-btn" data-lock="style" title="Bloquear estilo">🔓</button>
+      </div>
+      <div class="grid-2">
+        <div class="control">
+          <label>Enfoque (Blur) <span class="val-display" id="valBlur">0.0</span></label>
+          <input type="range" id="paramBlur" min="0" max="15" value="0" step="0.5">
+        </div>
+        <div class="control">
+          <label>Fusión Líquida (Gooey) <span class="val-display" id="valGooey">0</span></label>
+          <input type="range" id="paramGooey" min="0" max="30" value="0" step="1">
+        </div>
+        <div class="control full">
+          <label>Ruido Dinámico <span class="val-display" id="valNoise">0.15</span></label>
+          <input type="range" id="paramNoise" min="0" max="1" value="0.15" step="0.05">
+        </div>
+        <div class="control full">
+          <label>Modo de Fusión (Blend Mode)</label>
+          <select id="paramBlend">
+            <option value="normal" selected>Normal</option>
+            <option value="difference">Exclusión / Inversión</option>
+            <option value="multiply">Multiplicar (Tintas)</option>
+          </select>
+        </div>
+        <div class="control full">
+          <label>Paleta Cromática</label>
+          <select id="paramPalMode">
+            <option value="1">Monocromático (Solo A)</option>
+            <option value="2">Bicromático (A + B)</option>
+            <option value="3" selected>Tricromático (A + B + C)</option>
+          </select>
+        </div>
+        <div class="control"><label>Color A</label><input type="color" id="colA" value="#4CAF50"></div>
+        <div class="control" id="wrapColB"><label>Color B</label><input type="color" id="colB" value="#FF3366"></div>
+        <div class="control" id="wrapColC"><label>Color C</label><input type="color" id="colC" value="#111111"></div>
+        <div class="control"><label>Fondo Base</label><input type="color" id="colBg" value="#E8E6E1"></div>
+        <div class="control full">
+          <label class="checkbox-wrap"><input type="checkbox" id="paramTrans"> Transparencia (Vector PNG Libre)</label>
+        </div>
+      </div>
+    </div>
+
+    <button class="action-btn random" id="btnRandom">MUTAR EXPERIMENTO 🎲</button>
+  </div>
+
+  <!-- Panel de Vista Previa -->
+  <div class="right-panel">
+    <div class="preview-wrapper">
+      <div id="svgHost"></div>
+    </div>
+    <div class="export-bar">
+      <select id="exportRes">
+        <option value="1080">Redes (1080px)</option>
+        <option value="2160" selected>Print HQ (2160px)</option>
+        <option value="4000">Ultra (4000px)</option>
+        <option value="6000">Master (6000px)</option>
+        <option value="8000">Colosal (8000px)</option>
+      </select>
+      <button class="action-btn secondary" id="btnJpg">⬇ JPG</button>
+      <button class="action-btn secondary" id="btnPng">⬇ PNG</button>
+      <button class="action-btn" id="btnSvg">⬇ SVG</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Estado global y candados
+  const state = {
+    pattern: 'chladni',
+    shapes: ['circle'],
+    seed: Math.floor(Math.random() * 1e9),
+    W: 1000,
+    H: 1000,
+    locks: { pattern: false, shapes: false, morph: false, wave: false, grid: false, style: false }
+  };
+
+  let historyStack = [];
+  let historyIndex = -1;
+  let isApplyingHistory = false;
+
+  function captureState() {
+    const s = {
+      pattern: state.pattern,
+      shapes: [...state.shapes],
+      seed: state.seed,
+      locks: {...state.locks},
+      ui: {}
+    };
+    document.querySelectorAll('input:not([type="button"]):not([type="text"]), select').forEach(el => {
+      if (el.id && el.id !== 'newPresetName') {
+        s.ui[el.id] = el.type === 'checkbox' ? el.checked : el.value;
+      }
+    });
+    s.ui['customText'] = document.getElementById('customText').value;
+    return JSON.stringify(s);
+  }
+
+  function recordHistory() {
+    if (isApplyingHistory) return;
+    const current = captureState();
+    if (historyIndex >= 0 && historyStack[historyIndex] === current) return;
+    
+    historyStack = historyStack.slice(0, historyIndex + 1);
+    historyStack.push(current);
+    historyIndex++;
+    updateHistoryBtns();
+  }
+
+  function updateHistoryBtns() {
+    document.getElementById('btnUndo').disabled = historyIndex <= 0;
+    document.getElementById('btnRedo').disabled = historyIndex >= historyStack.length - 1;
+  }
+
+  function syncLabels() {
+    const getDisp = (id, decimal) => {
+        let el = document.getElementById(id);
+        if(!el) return '0';
+        return Number(el.value).toFixed(decimal);
+    };
+    document.getElementById('valN').innerText = getDisp('paramN', 1);
+    document.getElementById('valM').innerText = getDisp('paramM', 1);
+    document.getElementById('valDen').innerText = document.getElementById('paramDen').value;
+    document.getElementById('valMinS').innerText = getDisp('paramMinS', 1);
+    document.getElementById('valMaxS').innerText = getDisp('paramMaxS', 1);
+    document.getElementById('valThresh').innerText = getDisp('paramThresh', 2);
+    document.getElementById('valAngle').innerText = document.getElementById('paramAngle').value;
+    document.getElementById('valWarpX').innerText = getDisp('warpX', 2);
+    document.getElementById('valWarpY').innerText = getDisp('warpY', 2);
+    document.getElementById('valBlur').innerText = getDisp('paramBlur', 1);
+    document.getElementById('valGooey').innerText = document.getElementById('paramGooey').value;
+    document.getElementById('valNoise').innerText = getDisp('paramNoise', 2);
+    document.getElementById('valWaveAmp').innerText = getDisp('waveAmp', 1);
+    document.getElementById('valWaveFreq').innerText = getDisp('waveFreq', 1);
+    document.getElementById('valWaveRows').innerText = document.getElementById('waveRows').value;
+    document.getElementById('valWaveBlur').innerText = getDisp('waveBlur', 1);
+    document.getElementById('valTexDen').innerText = getDisp('paramTexDen', 1);
+  }
+
+  function restoreState(stateStr) {
+    if (!stateStr) return;
+    isApplyingHistory = true;
+    const s = JSON.parse(stateStr);
+    
+    state.pattern = s.pattern;
+    state.shapes = [...s.shapes];
+    state.seed = s.seed;
+    state.locks = {...s.locks};
+    
+    Object.keys(s.ui).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.type === 'checkbox') el.checked = s.ui[id];
+        else el.value = s.ui[id];
+      }
+    });
+    
+    document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
+    document.querySelectorAll('#shapeToggles .shape-btn').forEach(b => b.classList.toggle('active', state.shapes.includes(b.dataset.val)));
+    
+    document.querySelectorAll('.lock-btn').forEach(btn => {
+       const key = btn.dataset.lock;
+       btn.classList.toggle('locked', state.locks[key]);
+       btn.innerText = state.locks[key] ? '🔒' : '🔓';
+    });
+
+    document.getElementById('wrapColB').style.display = (s.ui.paramPalMode === '2' || s.ui.paramPalMode === '3') ? 'flex' : 'none';
+    document.getElementById('wrapColC').style.display = s.ui.paramPalMode === '3' ? 'flex' : 'none';
+    
+    syncLabels();
+    updateControlsState();
+    render();
+    updateHistoryBtns();
+    isApplyingHistory = false;
+  }
+
+  document.getElementById('btnUndo').addEventListener('click', () => {
+    if (historyIndex > 0) { historyIndex--; restoreState(historyStack[historyIndex]); }
+  });
+  document.getElementById('btnRedo').addEventListener('click', () => {
+    if (historyIndex < historyStack.length - 1) { historyIndex++; restoreState(historyStack[historyIndex]); }
+  });
+
+  window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      if (e.shiftKey) {
+        if (historyIndex < historyStack.length - 1) { historyIndex++; restoreState(historyStack[historyIndex]); }
+      } else {
+        if (historyIndex > 0) { historyIndex--; restoreState(historyStack[historyIndex]); }
+      }
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      if (historyIndex < historyStack.length - 1) { historyIndex++; restoreState(historyStack[historyIndex]); }
+    }
+  });
+
+  // Presets Save System
+  function loadSavedCustomPresets() {
+    const grid = document.getElementById('savedPresetsList');
+    grid.innerHTML = '';
+    const saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
+    Object.keys(saved).forEach(name => {
+      const btn = document.createElement('div');
+      btn.className = 'saved-preset-btn';
+      
+      const span = document.createElement('span');
+      span.innerText = name;
+      span.style.flex = "1";
+      span.onclick = () => { restoreState(saved[name]); recordHistory(); };
+      
+      const del = document.createElement('button');
+      del.className = 'del-preset';
+      del.innerText = '×';
+      del.title = 'Eliminar';
+      del.onclick = (e) => {
+        e.stopPropagation();
+        delete saved[name];
+        localStorage.setItem('nodal_presets', JSON.stringify(saved));
+        loadSavedCustomPresets();
+      };
+      
+      btn.appendChild(span);
+      btn.appendChild(del);
+      grid.appendChild(btn);
+    });
+  }
+
+  document.getElementById('btnSavePreset').addEventListener('click', () => {
+    const name = document.getElementById('newPresetName').value.trim();
+    if (!name) return alert('Escribe un nombre para el preset');
+    const saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
+    saved[name] = captureState();
+    localStorage.setItem('nodal_presets', JSON.stringify(saved));
+    document.getElementById('newPresetName').value = '';
+    loadSavedCustomPresets();
+  });
+
+  function mulberry32(a) {
+    return function() {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+
+  const setVal = (id, valId, val) => {
+    document.getElementById(id).value = val;
+    if (valId) {
+      let dispVal = Number(val);
+      if (document.getElementById(id).step.includes('.')) dispVal = dispVal.toFixed(2);
+      document.getElementById(valId).innerText = dispVal;
+    }
+  };
+
+  const bindSlider = (id, valId) => {
+    document.getElementById(id).addEventListener('input', e => {
+      let val = parseFloat(e.target.value);
+      if (e.target.step.includes('.')) val = val.toFixed(2);
+      else val = val.toString();
+      document.getElementById(valId).innerText = val;
+      renderDebounced(); 
+    });
+    document.getElementById(id).addEventListener('change', recordHistory);
+  };
+
+  let renderTimeout;
+  function renderDebounced() {
+    if(renderTimeout) cancelAnimationFrame(renderTimeout);
+    renderTimeout = requestAnimationFrame(render);
+  }
+
+  bindSlider('paramN', 'valN');
+  bindSlider('paramM', 'valM');
+  document.getElementById('paramDen').addEventListener('input', e => { document.getElementById('valDen').innerText = e.target.value; renderDebounced(); });
+  document.getElementById('paramDen').addEventListener('change', recordHistory);
+  bindSlider('paramMinS', 'valMinS');
+  bindSlider('paramMaxS', 'valMaxS');
+  bindSlider('paramThresh', 'valThresh');
+  bindSlider('paramAngle', 'valAngle');
+  bindSlider('paramBlur', 'valBlur');
+  bindSlider('paramGooey', 'valGooey');
+  bindSlider('paramNoise', 'valNoise');
+  bindSlider('warpX', 'valWarpX');
+  bindSlider('warpY', 'valWarpY');
+  bindSlider('waveAmp', 'valWaveAmp');
+  bindSlider('waveFreq', 'valWaveFreq');
+  bindSlider('waveRows', 'valWaveRows');
+  bindSlider('waveBlur', 'valWaveBlur');
+  bindSlider('paramTexDen', 'valTexDen');
+
+  ['colA', 'colB', 'colC', 'colBg', 'waveColor', 'waveStyle', 'paramGridN', 'paramGridLines', 'paramTrans', 'waveEnabled', 'waveSyncColor', 'drawForeground', 'paramFillType', 'paramBlend', 'warpTargetFg', 'warpTargetBg'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      el.addEventListener('change', () => {
+         render();
+         recordHistory();
+      });
+    }
+  });
+
+  let textDebounce;
+  document.getElementById('customText').addEventListener('keyup', () => {
+      renderDebounced();
+      clearTimeout(textDebounce);
+      textDebounce = setTimeout(recordHistory, 500);
+  });
+
+  document.getElementById('paramPalMode').addEventListener('change', e => {
+    document.getElementById('wrapColB').style.display = (e.target.value === '2' || e.target.value === '3') ? 'flex' : 'none';
+    document.getElementById('wrapColC').style.display = e.target.value === '3' ? 'flex' : 'none';
+    render();
+    recordHistory();
+  });
+
+  function updateControlsState() {
+    const mCtrl = document.getElementById('ctrlM');
+    const usesM = ['chladni', 'chladniRadial', 'matrixWarp', 'sequencer', 'dataMatrix'].includes(state.pattern);
+    mCtrl.style.opacity = usesM ? '1' : '0.3';
+    mCtrl.style.pointerEvents = usesM ? 'auto' : 'none';
+
+    const wEnabled = document.getElementById('waveEnabled').checked;
+    ['ctrlWaveStyle', 'ctrlWaveRows', 'ctrlWaveAmp', 'ctrlWaveFreq', 'ctrlWaveColor', 'ctrlWaveSync', 'ctrlWaveBlur'].forEach(id => {
+       const el = document.getElementById(id);
+       if(el){
+         el.style.opacity = wEnabled ? '1' : '0.4';
+         el.style.pointerEvents = wEnabled ? 'auto' : 'none';
+       }
+    });
+  }
+
+  document.getElementById('waveEnabled').addEventListener('change', updateControlsState);
+  
+  document.getElementById('btnSoloBg').addEventListener('click', () => {
+      document.getElementById('drawForeground').checked = false;
+      document.getElementById('waveEnabled').checked = true;
+      updateControlsState(); render(); recordHistory();
+  });
+  document.getElementById('btnSoloFg').addEventListener('click', () => {
+      document.getElementById('drawForeground').checked = true;
+      document.getElementById('waveEnabled').checked = false;
+      updateControlsState(); render(); recordHistory();
+  });
+
+  document.querySelectorAll('#patternToggles .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      state.pattern = e.target.dataset.val;
+      updateControlsState();
+      render();
+      recordHistory();
+    });
+  });
+
+  document.querySelectorAll('#shapeToggles .shape-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.target.classList.toggle('active');
+      const activeBtns = document.querySelectorAll('#shapeToggles .shape-btn.active');
+      if (activeBtns.length === 0) e.target.classList.add('active'); 
+      state.shapes = Array.from(document.querySelectorAll('#shapeToggles .shape-btn.active')).map(b => b.dataset.val);
+      render();
+      recordHistory();
+    });
+  });
+
+  // PRESETS DE ESTUDIO (Completamente Diferenciados)
+  function applyStudioPreset(type) {
+    state.seed = Math.floor(Math.random() * 1e9);
+    
+    // RESET MASIVO (Para evitar que se mezclen variables viejas)
+    document.getElementById('paramBlend').value = 'normal';
+    document.getElementById('paramTrans').checked = false;
+    document.getElementById('warpTargetFg').checked = true;
+    document.getElementById('warpTargetBg').checked = true;
+    document.getElementById('paramGridLines').checked = false;
+    setVal('paramAngle', 'valAngle', '0');
+    setVal('paramGooey', 'valGooey', '0');
+    setVal('warpX', 'valWarpX', '0.0'); 
+    setVal('warpY', 'valWarpY', '0.0');
+    setVal('paramBlur', 'valBlur', '0.0');
+    document.getElementById('paramFillType').value = 'solid';
+    
+    if (type === 'moire') {
+      state.pattern = 'chladni'; state.shapes = ['circle'];
+      setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '1.0');
+      document.getElementById('paramDen').value = 4500; document.getElementById('valDen').innerText = 4500;
+      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '2.5');
+      setVal('paramThresh', 'valThresh', '0.15'); setVal('paramNoise', 'valNoise', '0.05');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '3';
+      document.getElementById('colA').value = '#141414'; document.getElementById('colB').value = '#f5e400'; document.getElementById('colC').value = '#8f8a7d'; document.getElementById('colBg').value = '#c7c4bb';
+      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'tin_warp'; document.getElementById('waveSyncColor').checked = true;
+      setVal('waveRows', 'valWaveRows', '32'); setVal('waveAmp', 'valWaveAmp', '2.5'); setVal('waveFreq', 'valWaveFreq', '2.0'); document.getElementById('waveColor').value = '#222222';
+      document.getElementById('drawForeground').checked = true;
+    } 
+    else if (type === 'data') {
+      state.pattern = 'dataMatrix'; state.shapes = ['circle'];
+      setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '10.0'); 
+      document.getElementById('paramDen').value = 2000; document.getElementById('valDen').innerText = 2000;
+      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '10.0');
+      setVal('paramThresh', 'valThresh', '0.65'); setVal('paramNoise', 'valNoise', '0.20');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '3';
+      document.getElementById('colA').value = '#2C3E50'; document.getElementById('colB').value = '#3E4A3D'; document.getElementById('colC').value = '#8B3A33'; document.getElementById('colBg').value = '#EBE5DA'; 
+      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'chladni_sand'; document.getElementById('waveSyncColor').checked = false; document.getElementById('waveColor').value = '#2C3E50';
+      setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '1.0'); setVal('waveFreq', 'valWaveFreq', '6.0');
+      document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'typo') {
+      state.pattern = 'chladniRadial'; state.shapes = ['text'];
+      document.getElementById('customText').value = "NODAL";
+      setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '7.0'); 
+      document.getElementById('paramDen').value = 1500; document.getElementById('valDen').innerText = 1500;
+      setVal('paramMinS', 'valMinS', '4.0'); setVal('paramMaxS', 'valMaxS', '18.0');
+      setVal('paramThresh', 'valThresh', '0.65'); setVal('paramNoise', 'valNoise', '0.80');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '2';
+      document.getElementById('colA').value = '#ff8c00'; document.getElementById('colB').value = '#ffb300'; document.getElementById('colBg').value = '#161412'; 
+      document.getElementById('waveEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'pastel') {
+      state.pattern = 'matrixWarp'; state.shapes = ['line', 'triangle'];
+      setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '3.0'); 
+      document.getElementById('paramDen').value = 120; document.getElementById('valDen').innerText = 120;
+      setVal('paramMinS', 'valMinS', '40.0'); setVal('paramMaxS', 'valMaxS', '120.0');
+      setVal('paramThresh', 'valThresh', '0.80'); setVal('paramNoise', 'valNoise', '0.10');
+      document.getElementById('paramGridN').value = '24'; document.getElementById('paramGridLines').checked = true;
+      document.getElementById('paramPalMode').value = '3';
+      document.getElementById('colA').value = '#8ce5b0'; document.getElementById('colB').value = '#ba8cff'; document.getElementById('colC').value = '#ff9999'; document.getElementById('colBg').value = '#2a2524'; 
+      document.getElementById('waveEnabled').checked = false;
+      document.getElementById('paramFillType').value = 'stripesV';
+      setVal('paramTexDen', 'valTexDen', '6.0');
+      document.getElementById('drawForeground').checked = true;
+      setVal('warpX', 'valWarpX', '0.15'); setVal('warpY', 'valWarpY', '0.15');
+    }
+    else if (type === 'swiss') {
+      state.pattern = 'dataMatrix'; state.shapes = ['hash', 'circle', 'line'];
+      setVal('paramN', 'valN', '10.0'); setVal('paramM', 'valM', '15.0'); 
+      document.getElementById('paramDen').value = 4000; document.getElementById('valDen').innerText = 4000;
+      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '15.0'); 
+      setVal('paramThresh', 'valThresh', '0.70'); setVal('paramNoise', 'valNoise', '0.0');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '2';
+      document.getElementById('colA').value = '#000000'; document.getElementById('colB').value = '#222222'; document.getElementById('colBg').value = '#ffffff'; 
+      document.getElementById('waveEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'neon') {
+      state.pattern = 'sequencer'; state.shapes = ['line'];
+      setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '4.0'); 
+      document.getElementById('paramDen').value = 400; document.getElementById('valDen').innerText = 400;
+      setVal('paramMinS', 'valMinS', '20.0'); setVal('paramMaxS', 'valMaxS', '120.0');
+      setVal('paramThresh', 'valThresh', '0.80'); setVal('paramNoise', 'valNoise', '0.0');
+      setVal('paramAngle', 'valAngle', '90'); // Rotación fija a 90 (cápsulas)
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '1';
+      document.getElementById('colA').value = '#4dff5b'; document.getElementById('colBg').value = '#222222'; 
+      document.getElementById('waveEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'cellular') {
+      state.pattern = 'dataMatrix'; state.shapes = ['rect', 'circle'];
+      setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '12.0'); 
+      document.getElementById('paramDen').value = 4500; document.getElementById('valDen').innerText = 4500;
+      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '20.0');
+      setVal('paramThresh', 'valThresh', '0.70'); setVal('paramNoise', 'valNoise', '0.25');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramBlend').value = 'difference';
+      document.getElementById('paramPalMode').value = '3';
+      document.getElementById('colA').value = '#000000'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#ff00a2'; document.getElementById('colBg').value = '#e5e5e5'; 
+      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'pixel_grid'; document.getElementById('waveSyncColor').checked = true; document.getElementById('waveColor').value = '#000000';
+      setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '1.0'); setVal('waveFreq', 'valWaveFreq', '2.0');
+      document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'gooey') {
+      state.pattern = 'dataScatter'; state.shapes = ['circle'];
+      setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '4.0'); 
+      document.getElementById('paramDen').value = 800; document.getElementById('valDen').innerText = 800;
+      setVal('paramMinS', 'valMinS', '10.0'); setVal('paramMaxS', 'valMaxS', '60.0');
+      setVal('paramThresh', 'valThresh', '0.60'); setVal('paramNoise', 'valNoise', '0.25');
+      setVal('paramGooey', 'valGooey', '15'); // EFECTO METABALL ALTO
+      document.getElementById('paramGridN').value = '4'; document.getElementById('paramGridLines').checked = true;
+      document.getElementById('paramPalMode').value = '3';
+      document.getElementById('colA').value = '#ff0055'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2'; 
+      document.getElementById('waveEnabled').checked = false; 
+      document.getElementById('drawForeground').checked = true;
+    }
+
+    document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
+    document.querySelectorAll('#shapeToggles .shape-btn').forEach(b => b.classList.toggle('active', state.shapes.includes(b.dataset.val)));
+    
+    const pMode = document.getElementById('paramPalMode').value;
+    document.getElementById('wrapColB').style.display = (pMode === '2' || pMode === '3') ? 'flex' : 'none';
+    document.getElementById('wrapColC').style.display = pMode === '3' ? 'flex' : 'none';
+    
+    syncLabels(); updateControlsState(); render(); recordHistory();
+  }
+
+  document.getElementById('btnRandom').addEventListener('click', () => {
+    state.seed = Math.floor(Math.random() * 1e9);
+
+    if (!state.locks.pattern) {
+      const patterns = ['chladni', 'chladniRadial', 'matrixWarp', 'sequencer', 'dataScatter', 'ghostStrings', 'concentricWaves', 'dataMatrix'];
+      state.pattern = patterns[Math.floor(Math.random() * patterns.length)];
+      document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
+      updateControlsState();
+    }
+
+    if (!state.locks.shapes) {
+      const shapes = ['circle', 'rect', 'triangle', 'line', 'hash', 'text'];
+      const numShapes = Math.floor(Math.random() * 3) + 1; 
+      const shuffled = shapes.sort(() => 0.5 - Math.random());
+      state.shapes = shuffled.slice(0, numShapes);
+      document.querySelectorAll('#shapeToggles .shape-btn').forEach(b => {
+        b.classList.toggle('active', state.shapes.includes(b.dataset.val));
+      });
+    }
+
+    if (!state.locks.morph) {
+      setVal('paramN', 'valN', (1 + Math.random() * 14).toFixed(1));
+      setVal('paramM', 'valM', (1 + Math.random() * 14).toFixed(1));
+      const den = Math.floor(150 + Math.random() * 5000);
+      document.getElementById('paramDen').value = den; document.getElementById('valDen').innerText = den;
+      setVal('paramMinS', 'valMinS', (Math.random() * 5).toFixed(1));
+      setVal('paramMaxS', 'valMaxS', (4 + Math.random() * 40).toFixed(1));
+      setVal('paramThresh', 'valThresh', (0.15 + Math.random() * 0.8).toFixed(2));
+      setVal('paramAngle', 'valAngle', ['0','45','90'][Math.floor(Math.random()*3)]);
+    }
+
+    if (!state.locks.wave) {
+      const wOn = Math.random() > 0.3;
+      document.getElementById('waveEnabled').checked = wOn;
+      const styles = ['sine', 'tin_warp', 'pixel_grid', 'concentric', 'chladni_bg', 'chladni_sand'];
+      document.getElementById('waveStyle').value = styles[Math.floor(Math.random() * 6)];
+      document.getElementById('waveSyncColor').checked = Math.random() > 0.4;
+      setVal('waveAmp', 'valWaveAmp', (0.5 + Math.random()*4).toFixed(2));
+      setVal('waveFreq', 'valWaveFreq', (0.5 + Math.random()*15).toFixed(1));
+      const wr = Math.floor(6 + Math.random()*60);
+      document.getElementById('waveRows').value = wr; document.getElementById('valWaveRows').innerText = wr;
+      setVal('waveBlur', 'valWaveBlur', Math.random() > 0.6 ? (Math.random() * 15).toFixed(1) : 0);
+      updateControlsState();
+    }
+
+    if (!state.locks.grid) {
+      const grids = [1, 2, 4, 6, 12, 24];
+      document.getElementById('paramGridN').value = grids[Math.floor(Math.random() * grids.length)];
+      setVal('warpX', 'valWarpX', (Math.random() * 0.2).toFixed(2));
+      setVal('warpY', 'valWarpY', (Math.random() * 0.2).toFixed(2));
+      document.getElementById('paramGridLines').checked = Math.random() > 0.6;
+    }
+
+    if (!state.locks.style) {
+      const fills = ['solid', 'stripesV', 'stripesH', 'dots', 'spectrogram'];
+      document.getElementById('paramFillType').value = fills[Math.floor(Math.random() * 5)];
+      setVal('paramTexDen', 'valTexDen', (2 + Math.random() * 15).toFixed(1));
+      
+      const blends = ['normal', 'difference', 'multiply'];
+      document.getElementById('paramBlend').value = blends[Math.floor(Math.random() * 3)];
+      
+      setVal('paramBlur', 'valBlur', Math.random() > 0.7 ? (Math.random() * 8).toFixed(1) : 0);
+      setVal('paramGooey', 'valGooey', Math.random() > 0.8 ? (Math.random() * 20).toFixed(0) : 0);
+      setVal('paramNoise', 'valNoise', (Math.random() * 1.0).toFixed(2));
+      
+      const baseHue = Math.floor(Math.random() * 360);
+      document.getElementById('colA').value = hslToHex(baseHue, 60 + Math.random() * 40, 40 + Math.random() * 40);
+      document.getElementById('colB').value = hslToHex((baseHue + 60 + Math.random() * 240) % 360, 60 + Math.random() * 40, 50 + Math.random() * 30);
+      document.getElementById('colC').value = hslToHex((baseHue + 120 + Math.random() * 180) % 360, 50 + Math.random() * 50, 50 + Math.random() * 30);
+      
+      const isDark = Math.random() > 0.4;
+      const bgL = isDark ? (5 + Math.random()*10) : (85 + Math.random()*10);
+      document.getElementById('colBg').value = hslToHex(baseHue, 10 + Math.random() * 20, bgL);
+      document.getElementById('waveColor').value = hslToHex((baseHue + 180)%360, 50, isDark ? 80 : 20);
+      
+      const modes = ['1', '2', '3'];
+      const selMode = modes[Math.floor(Math.random() * 3)];
+      document.getElementById('paramPalMode').value = selMode;
+      document.getElementById('wrapColB').style.display = (selMode === '2' || selMode === '3') ? 'flex' : 'none';
+      document.getElementById('wrapColC').style.display = selMode === '3' ? 'flex' : 'none';
+    }
+
+    render();
+    recordHistory();
+  });
+
+  // Utils Matemáticos
+  function applyGlobalWarp(px, py, W, H, wx, wy, freq, phase) {
+      if (wx === 0 && wy === 0) return {x: px, y: py};
+      const nx = px / W;
+      const ny = py / H;
+      const dx = Math.sin(ny * Math.PI * freq + phase) * Math.cos(nx * Math.PI * (freq*0.5)) * wx * W;
+      const dy = Math.cos(nx * Math.PI * freq + phase) * Math.sin(ny * Math.PI * (freq*0.5)) * wy * H;
+      return { x: px + dx, y: py + dy };
+  }
+
+  function resolveColor(seed, mode, cA, cB, cC) {
+    if (mode === '1') return cA;
+    if (mode === '2') return seed < 0.5 ? cA : cB;
+    if (seed < 0.33) return cA;
+    if (seed < 0.66) return cB;
+    return cC;
+  }
+
+  function buildShapeSvg(type, x, y, size, color, angle, seed, txtSource, fillType) {
+    if (size <= 0.0) return ''; 
+    const strokeW = Math.max(0.5, size * 0.15);
+    let fillAttr = fillType === 'solid' ? color : `url(#${fillType}_${color.replace('#','')})`;
+    
+    if (type === 'circle') {
+      if (seed > 0.8 && fillType === 'solid') {
+        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size/2).toFixed(1)}" fill="none" stroke="${color}" stroke-width="${strokeW.toFixed(1)}" />`;
+      }
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size/2).toFixed(1)}" fill="${fillAttr}" />`;
+    } 
+    else if (type === 'rect') {
+      const half = size/2;
+      return `<rect x="${(x-half).toFixed(1)}" y="${(y-half).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" fill="${fillAttr}" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
+    } 
+    else if (type === 'triangle') {
+      const r = size/2;
+      const x1 = x, y1 = y - r;
+      const x2 = x + r*0.866, y2 = y + r*0.5;
+      const x3 = x - r*0.866, y3 = y + r*0.5;
+      return `<polygon points="${x1.toFixed(1)},${y1.toFixed(1)} ${x2.toFixed(1)},${y2.toFixed(1)} ${x3.toFixed(1)},${y3.toFixed(1)}" fill="${fillAttr}" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
+    } 
+    else if (type === 'line') {
+      const h = size/2;
+      return `<line x1="${(x-h).toFixed(1)}" y1="${y.toFixed(1)}" x2="${(x+h).toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="${(strokeW*1.5).toFixed(1)}" stroke-linecap="round" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
+    } 
+    else if (type === 'hash') {
+      const lines = Math.floor(3 + seed * 2);
+      const space = size / lines;
+      const half = size/2;
+      let path = '';
+      for(let i=0; i<lines; i++){
+         const oy = -half + (i * space) + (space/2);
+         path += `M ${(x-half).toFixed(1)} ${(y+oy).toFixed(1)} L ${(x+half).toFixed(1)} ${(y+oy).toFixed(1)} `;
+      }
+      return `<path d="${path}" stroke="${color}" stroke-width="${(strokeW*0.6).toFixed(1)}" stroke-linecap="round" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
+    }
+    else if (type === 'text') {
+      const char = txtSource.charAt(Math.floor(seed * txtSource.length)) || 'A';
+      return `<text x="${x.toFixed(1)}" y="${(y + size*0.35).toFixed(1)}" font-family="IBM Plex Mono" font-weight="700" font-size="${(size*1.2).toFixed(1)}" fill="${fillAttr}" text-anchor="middle" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">${char}</text>`;
+    }
+    return '';
+  }
+
+  function generateField(rng, p, W, H) {
+    const rawElems = [];
+    const c_sign = (rng() > 0.5 ? 1 : -1);
+    const c_phase = rng() * Math.PI;
+
+    if (state.pattern === 'dataMatrix') {
+        const baseCols = Math.max(1, Math.floor(p.n));
+        const maxDepth = Math.max(0, Math.floor(p.m / 3)); 
+        const subdivide = (cx, cy, size, depth) => {
+            const nVal = Math.sin(cx * Math.PI * p.n * 2) * Math.cos(cy * Math.PI * p.m * 2) + (rng() - 0.5) * p.noise * 2.0;
+            if (depth < maxDepth && Math.abs(nVal) < p.thresh * 2) {
+                const ns = size / 2;
+                const offset = ns / 2;
+                subdivide(cx - offset, cy - offset, ns, depth + 1);
+                subdivide(cx + offset, cy - offset, ns, depth + 1);
+                subdivide(cx - offset, cy + offset, ns, depth + 1);
+                subdivide(cx + offset, cy + offset, ns, depth + 1);
+            } else {
+                if (rng() > 0.15) { 
+                    let finalSize = (size * W * 0.85) * (p.maxS / 10);
+                    finalSize *= 1.0 + (rng() - 0.5) * p.noise; 
+                    if (finalSize >= p.minS) {
+                        rawElems.push({ x: cx, y: cy, s: finalSize, angle: rng()*360, val: nVal, seed: rng(), isMatrix: true });
+                    }
+                }
+            }
+        };
+        for (let i = 0; i < baseCols; i++) {
+            for (let j = 0; j < baseCols; j++) {
+                subdivide((i + 0.5) / baseCols, (j + 0.5) / baseCols, 1 / baseCols, 0);
+            }
+        }
+    } else {
+        for (let i = 0; i < p.density; i++) {
+          let x = rng(), y = rng();
+          let val = 0;
+          let angle = 0;
+          let keep = false;
+
+          if (state.pattern === 'chladni') {
+            val = Math.cos(p.n*Math.PI*x)*Math.cos(p.m*Math.PI*y) + c_sign * Math.cos(p.m*Math.PI*x + c_phase)*Math.cos(p.n*Math.PI*y);
+            angle = val * 180;
+            val += (rng() - 0.5) * p.noise * 2.0;
+            keep = Math.abs(val) <= p.thresh;
+          } 
+          else if (state.pattern === 'chladniRadial') {
+            const dx = x-0.5, dy = y-0.5;
+            const r = Math.sqrt(dx*dx+dy*dy)*3.0;
+            const theta = Math.atan2(dy,dx);
+            val = Math.cos(p.n*Math.PI*r)*Math.cos(p.m*theta + c_phase);
+            angle = theta * (180/Math.PI) + val * 90;
+            val += (rng() - 0.5) * p.noise * 2.0;
+            keep = Math.abs(val) <= p.thresh;
+          }
+          else if (state.pattern === 'concentricWaves') {
+            const rings = Math.floor(3 + p.n * 2);
+            const rIdx = Math.floor(rng() * rings);
+            let r = ((rIdx + 1) / rings) * 0.45;
+            const a = rng() * Math.PI * 2;
+            r += Math.sin(a * p.m) * p.noise * 0.05;
+            x = 0.5 + Math.cos(a) * r;
+            y = 0.5 + Math.sin(a) * r;
+            angle = a * (180/Math.PI) + 90; 
+            val = rng();
+            keep = rng() <= p.thresh;
+          }
+          else if (state.pattern === 'matrixWarp') {
+            const cols = Math.floor(10 + p.n * 4);
+            const rows = Math.floor(10 + p.m * 4);
+            const px = Math.floor(rng() * cols) / cols; 
+            const py = Math.floor(rng() * rows) / rows;
+            x = px + (Math.sin(py * Math.PI * p.n) * p.noise * 0.1);
+            y = py + (Math.cos(px * Math.PI * p.m) * p.noise * 0.1);
+            angle = Math.sin(px * Math.PI) * 45;
+            val = Math.sin(x*10) * Math.cos(y*10); 
+            keep = rng() <= p.thresh; 
+          }
+          else if (state.pattern === 'sequencer') {
+            const tracks = Math.floor(4 + p.m * 2);
+            const trkIndex = Math.floor(rng() * tracks);
+            x = rng();
+            y = (trkIndex + 0.5) / tracks;
+            y += Math.sin(x * Math.PI * p.n) * p.noise * 0.05;
+            angle = 0;
+            val = trkIndex / tracks;
+            keep = rng() <= p.thresh;
+          }
+          else if (state.pattern === 'dataScatter') {
+            x = rng();
+            y = Math.pow(rng(), 1.5);
+            val = rng();
+            angle = 0;
+            keep = rng() <= p.thresh;
+          }
+          else if (state.pattern === 'ghostStrings') {
+            const cols = Math.floor(10 + p.n * 5); 
+            const colIdx = Math.floor(rng() * cols);
+            x = (colIdx + 0.5) / cols; 
+            y = Math.pow(rng(), 1.5); 
+            val = Math.sin(y * p.n * Math.PI * 2 + x * 10);
+            angle = 0;
+            keep = rng() <= p.thresh;
+          }
+
+          if (!keep) continue;
+
+          // Ruido dinámico posicional
+          if (state.pattern !== 'matrixWarp' && state.pattern !== 'sequencer' && state.pattern !== 'concentricWaves' && state.pattern !== 'ghostStrings') {
+            x += (rng() - 0.5) * p.noise * 0.05;
+            y += (rng() - 0.5) * p.noise * 0.05;
+          }
+
+          let s = p.minS + rng() * (p.maxS - p.minS);
+          if (state.pattern === 'ghostStrings' || state.pattern === 'sequencer') {
+            s *= Math.abs(Math.sin(y * Math.PI * p.m)) + 0.2; 
+          }
+          s *= 1.0 + (rng() * p.noise); 
+          
+          if (s >= p.minS && s > 0.0) {
+              rawElems.push({ x: x, y: y, s: s, angle: angle, val: val, seed: rng(), isMatrix: false });
+          }
+        }
+    }
+    return rawElems;
+  }
+
+  function render() {
+    const rng = mulberry32(state.seed);
+    
+    const p = {
+        n: parseFloat(document.getElementById('paramN').value),
+        m: parseFloat(document.getElementById('paramM').value),
+        density: parseInt(document.getElementById('paramDen').value),
+        minS: parseFloat(document.getElementById('paramMinS').value),
+        maxS: parseFloat(document.getElementById('paramMaxS').value),
+        thresh: parseFloat(document.getElementById('paramThresh').value),
+        noise: parseFloat(document.getElementById('paramNoise').value)
+    };
+    
+    const gridN = parseInt(document.getElementById('paramGridN').value);
+    const drawGridLines = document.getElementById('paramGridLines').checked;
+    const warpX = parseFloat(document.getElementById('warpX').value);
+    const warpY = parseFloat(document.getElementById('warpY').value);
+    const warpFg = document.getElementById('warpTargetFg').checked;
+    const warpBg = document.getElementById('warpTargetBg').checked;
+    
+    const blurAmt = parseFloat(document.getElementById('paramBlur').value);
+    const gooeyAmt = parseFloat(document.getElementById('paramGooey').value);
+    const globalAngle = parseFloat(document.getElementById('paramAngle').value);
+    
+    const palMode = document.getElementById('paramPalMode').value;
+    const cA = document.getElementById('colA').value;
+    const cB = document.getElementById('colB').value;
+    const cC = document.getElementById('colC').value;
+    const cBg = document.getElementById('colBg').value;
+    const isTrans = document.getElementById('paramTrans').checked;
+    
+    const drawForeground = document.getElementById('drawForeground').checked;
+    const blendMode = document.getElementById('paramBlend').value;
+    const fillType = document.getElementById('paramFillType').value;
+    const texDen = parseFloat(document.getElementById('paramTexDen').value);
+    
+    let txtSource = document.getElementById('customText').value.trim();
+    if(txtSource === '') txtSource = 'ITERATION';
+
+    const waveEnabled = document.getElementById('waveEnabled').checked;
+    const waveStyle = document.getElementById('waveStyle').value;
+    const waveSyncColor = document.getElementById('waveSyncColor').checked;
+    const waveRows = parseInt(document.getElementById('waveRows').value);
+    const waveAmp = parseFloat(document.getElementById('waveAmp').value);
+    const waveFreq = parseFloat(document.getElementById('waveFreq').value);
+    const waveColor = document.getElementById('waveColor').value;
+    const waveBlur = parseFloat(document.getElementById('waveBlur').value);
+    const wPhase = rng() * Math.PI * 2; 
+
+    const c_sign = (rng() > 0.5 ? 1 : -1);
+
+    const W = state.W, H = state.H;
+    
+    const getOpticalValue = (px, py) => {
+        if (!waveEnabled) return 0;
+        let nx = px / W; let ny = py / H;
+        
+        if (waveStyle === 'sine') {
+             return Math.sin(nx * Math.PI * 2 * waveFreq + wPhase) * waveAmp;
+        } else if (waveStyle === 'tin_warp') {
+             const dx = px - W/2; const dy = py - H/2;
+             const r = Math.sqrt(dx*dx + dy*dy);
+             const yy = py + Math.sin(r * waveFreq * 0.01 - wPhase) * waveAmp * 200;
+             const spacing = H / (waveRows * 2);
+             return Math.sin(yy / spacing * Math.PI) > 0 ? 1 : -1;
+        } else if (waveStyle === 'pixel_grid') {
+             const scale = Math.max(10, W / (waveFreq * 5));
+             const cx = Math.floor(px / scale);
+             const cy = Math.floor(py / scale);
+             return (Math.sin(cx * 0.5 + wPhase) * Math.cos(cy * 0.5 + wPhase)) > 0 ? 1 : -1;
+        } else if (waveStyle === 'concentric') {
+             const dx = px - W/2; const dy = py - H/2;
+             const r = Math.sqrt(dx*dx + dy*dy);
+             return Math.sin(r * waveFreq * 0.05 - wPhase) > 0 ? 1 : -1;
+        } else if (waveStyle === 'chladni_bg' || waveStyle === 'chladni_sand') {
+             let v = Math.cos(waveFreq*Math.PI*nx)*Math.cos((waveFreq*1.5)*Math.PI*ny) + c_sign * Math.cos((waveFreq*1.5)*Math.PI*nx)*Math.cos(waveFreq*Math.PI*ny);
+             v += Math.sin(nx * 10 + wPhase) * 0.1;
+             return Math.abs(v) < (waveAmp * 0.5) ? 1 : -1;
+        }
+        return 0;
+    };
+
+    const crispGroup = [];
+    const blurredGroup = [];
+    const colorsInUse = new Set();
+
+    if (drawForeground) {
+      const rawElems = generateField(rng, p, W, H);
+      for (const el of rawElems) {
+        
+        let fX = el.x * W;
+        let fY = el.y * H;
+        if (warpFg) {
+           let wp = applyGlobalWarp(fX, fY, W, H, warpX, warpY, waveFreq, wPhase);
+           fX = wp.x; fY = wp.y;
+        }
+
+        // Add static or random rotation
+        let fAngle = globalAngle !== 0 ? globalAngle : el.angle;
+        if (state.pattern !== 'sequencer' && state.pattern !== 'concentricWaves' && globalAngle === 0) {
+            fAngle += (rng() - 0.5) * p.noise * 360;
+        }
+
+        let colorSeed = el.seed;
+        
+        if (waveEnabled && waveSyncColor) {
+           const optVal = getOpticalValue(fX, fY);
+           if (optVal > 0) colorSeed = 1.0 - colorSeed;
+        } else {
+           const col = Math.min(gridN-1, Math.max(0, Math.floor((fX/W) * gridN)));
+           const row = Math.min(gridN-1, Math.max(0, Math.floor((fY/H) * gridN)));
+           const nx = col / Math.max(1, gridN-1);
+           const ny = row / Math.max(1, gridN-1);
+           const wVal = Math.sin(nx * Math.PI * 3 + rng()*0.01) * Math.cos(ny * Math.PI * 3);
+           if (wVal > 0 && gridN > 1) {
+             colorSeed = 1.0 - colorSeed;
+             if (state.pattern === 'matrixWarp') el.s *= 0.5; 
+           }
+        }
+
+        const color = resolveColor(colorSeed, palMode, cA, cB, cC);
+        colorsInUse.add(color);
+        
+        const shapeIdx = Math.floor(Math.abs(el.val) * 10 * state.shapes.length) % state.shapes.length;
+        const type = state.shapes[shapeIdx];
+        
+        let finalSvg = buildShapeSvg(type, fX, fY, el.s, color, fAngle, colorSeed, txtSource, fillType);
+        if (!finalSvg) continue;
+
+        if (blurAmt > 0 && rng() < 0.3) {
+          blurredGroup.push(finalSvg);
+        } else {
+          crispGroup.push(finalSvg);
+        }
+      }
+    }
+
+    let waveLayer = '';
+    if (waveEnabled) {
+      let wavePaths = [];
+      
+      if (waveStyle === 'sine') {
+        for (let r = 0; r < waveRows; r++) {
+          const yBase = (r + 0.5) / waveRows * H;
+          let d = `M 0 ${yBase.toFixed(1)} `;
+          for (let px = 0; px <= W; px += 10) {
+            let yy = yBase + Math.sin((px / W) * Math.PI * 2 * waveFreq + wPhase) * waveAmp * (H / 2);
+            let pt = warpBg ? applyGlobalWarp(px, yy, W, H, warpX, warpY, waveFreq, wPhase) : {x: px, y: yy};
+            d += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
+          }
+          wavePaths.push(`<path d="${d}" stroke="${waveColor}" stroke-width="1.5" fill="none" opacity="0.6" />`);
+        }
+      } 
+      else if (waveStyle === 'tin_warp') {
+        let linesCount = waveRows * 2;
+        let spacing = H / linesCount;
+        for(let i=0; i<=linesCount; i++) {
+            let yBase = i * spacing;
+            let d = `M 0 ${yBase.toFixed(1)} `;
+            for(let px=0; px<=W; px+=10) {
+                let dx = px - W/2; let dy = yBase - H/2;
+                let r = Math.sqrt(dx*dx + dy*dy);
+                let yy = yBase + Math.sin(r * waveFreq * 0.01 - wPhase) * waveAmp * 200;
+                let pt = warpBg ? applyGlobalWarp(px, yy, W, H, warpX, warpY, waveFreq, wPhase) : {x: px, y: yy};
+                d += `L ${pt.x.toFixed(1)} ${pt.y.toFixed(1)} `;
+            }
+            wavePaths.push(`<path d="${d}" stroke="${waveColor}" stroke-width="${(spacing * 0.4).toFixed(1)}" fill="none" />`);
+        }
+      }
+      else if (waveStyle === 'pixel_grid') {
+        let gridSize = Math.max(5, W / (waveFreq * 5));
+        for(let px=0; px<W; px+=gridSize) {
+           for(let py=0; py<H; py+=gridSize) {
+               let v = Math.sin((px/W) * Math.PI * 2 * waveFreq * 2 + wPhase) * Math.cos((py/H) * Math.PI * 2 * waveFreq * 2 + wPhase);
+               if (v > (1.0 - (waveAmp*0.5))) { 
+                   let pt = warpBg ? applyGlobalWarp(px, py, W, H, warpX, warpY, waveFreq, wPhase) : {x: px, y: py};
+                   wavePaths.push(`<rect x="${pt.x.toFixed(1)}" y="${pt.y.toFixed(1)}" width="${gridSize.toFixed(1)}" height="${gridSize.toFixed(1)}" fill="${waveColor}" opacity="0.8"/>`);
+               }
+           }
+        }
+      }
+      else if (waveStyle === 'concentric') {
+        for (let r = 0; r < waveRows; r++) {
+          const rad = ((r + 1) / waveRows) * (Math.min(W,H) * 0.45);
+          let pt = warpBg ? applyGlobalWarp(W/2, H/2, W, H, warpX, warpY, waveFreq, wPhase) : {x: W/2, y: H/2};
+          wavePaths.push(`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${rad.toFixed(1)}" stroke="${waveColor}" stroke-width="${(10 * waveAmp).toFixed(1)}" fill="none" opacity="0.6" />`);
+        }
+      }
+      else if (waveStyle === 'chladni_bg') {
+        let gridSize = Math.max(4, W / waveRows); 
+        for(let px=0; px<=W; px+=gridSize) {
+           for(let py=0; py<=H; py+=gridSize) {
+               let nx = px/W; let ny = py/H;
+               let v = Math.cos(waveFreq*Math.PI*nx)*Math.cos((waveFreq*1.5)*Math.PI*ny) + c_sign * Math.cos((waveFreq*1.5)*Math.PI*nx)*Math.cos(waveFreq*Math.PI*ny);
+               v += Math.sin(nx * 10 + wPhase) * 0.1;
+               if (Math.abs(v) < (waveAmp * 0.5)) {
+                   let r = (gridSize * 0.45) * (1 - Math.abs(v)/(waveAmp*0.5));
+                   let pt = warpBg ? applyGlobalWarp(px, py, W, H, warpX, warpY, waveFreq, wPhase) : {x: px, y: py};
+                   wavePaths.push(`<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${r.toFixed(2)}" fill="${waveColor}"/>`);
+               }
+           }
+        }
+      }
+      else if (waveStyle === 'chladni_sand') {
+        let totalSand = waveRows * 500;
+        let sandPaths = '';
+        for (let s=0; s<totalSand; s++) {
+            let px = rng() * W; let py = rng() * H;
+            let nx = px/W; let ny = py/H;
+            let v = Math.cos(waveFreq*Math.PI*nx)*Math.cos((waveFreq*1.5)*Math.PI*ny) + c_sign * Math.cos((waveFreq*1.5)*Math.PI*nx)*Math.cos(waveFreq*Math.PI*ny);
+            if (Math.abs(v) < (waveAmp * 0.3)) {
+               let r = 0.5 + rng() * 1.5;
+               let pt = warpBg ? applyGlobalWarp(px, py, W, H, warpX, warpY, waveFreq, wPhase) : {x: px, y: py};
+               sandPaths += `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${waveColor}" opacity="${0.4+rng()*0.6}"/>`;
+            }
+        }
+        wavePaths.push(sandPaths);
+      }
+      waveLayer = wavePaths.join('');
+    }
+
+    let defs = '';
+    colorsInUse.forEach(c => {
+      const cHex = c.replace('#','');
+      if (fillType === 'stripesV') {
+        defs += `<pattern id="stripesV_${cHex}" width="${texDen}" height="${texDen}" patternUnits="userSpaceOnUse" patternTransform="rotate(0)">
+                    <rect width="${texDen/2}" height="${texDen}" fill="${c}" />
+                 </pattern>`;
+      } else if (fillType === 'stripesH') {
+        defs += `<pattern id="stripesH_${cHex}" width="${texDen}" height="${texDen}" patternUnits="userSpaceOnUse" patternTransform="rotate(90)">
+                    <rect width="${texDen/2}" height="${texDen}" fill="${c}" />
+                 </pattern>`;
+      } else if (fillType === 'dots') {
+        defs += `<pattern id="dots_${cHex}" width="${texDen}" height="${texDen}" patternUnits="userSpaceOnUse">
+                    <circle cx="${texDen/2}" cy="${texDen/2}" r="${texDen*0.3}" fill="${c}" />
+                 </pattern>`;
+      } else if (fillType === 'spectrogram') {
+        let rects = '';
+        const patW = texDen * 5;
+        const patH = texDen * 5;
+        const patRng = mulberry32(state.seed + parseInt(cHex, 16) || 123);
+        for(let k=0; k<patW; k+=texDen*0.5) {
+           let h1 = patH * (0.2 + patRng()*0.8); 
+           let y1 = (patH - h1)/2;
+           let op = 0.3 + patRng()*0.7;
+           rects += `<rect x="${k.toFixed(1)}" y="${y1.toFixed(1)}" width="${(texDen*0.35).toFixed(1)}" height="${h1.toFixed(1)}" fill="${c}" opacity="${op.toFixed(2)}" />`;
+        }
+        defs += `<pattern id="spectrogram_${cHex}" width="${patW}" height="${patH}" patternUnits="userSpaceOnUse" patternTransform="rotate(${patRng()*10})">
+                    ${rects}
+                 </pattern>`;
+      }
+    });
+
+    let blurredForeground = '';
+    let finalWaveLayer = '';
+    let finalCrispGroup = crispGroup.join('');
+    
+    if (blurAmt > 0 && blurredGroup.length > 0) {
+      defs += `<filter id="dofBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${blurAmt}"/></filter>`;
+      blurredForeground = `<g filter="url(#dofBlur)">${blurredGroup.join('')}</g>`;
+    }
+
+    // Efecto Metaball / Gooey
+    if (gooeyAmt > 0) {
+      defs += `<filter id="gooeyFilter" x="-50%" y="-50%" width="200%" height="200%">
+                 <feGaussianBlur in="SourceGraphic" stdDeviation="${gooeyAmt}" result="blur" />
+                 <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+                 <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+               </filter>`;
+      finalCrispGroup = `<g filter="url(#gooeyFilter)">${finalCrispGroup}</g>`;
+    }
+    
+    if (waveEnabled && waveLayer !== '') {
+      if (waveBlur > 0) {
+        defs += `<filter id="bgBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${waveBlur}"/></filter>`;
+        finalWaveLayer = `<g filter="url(#bgBlur)">${waveLayer}</g>`;
+      } else {
+        finalWaveLayer = `<g>${waveLayer}</g>`;
+      }
+    }
+
+    let blendStyle = '';
+    if (blendMode === 'difference') blendStyle = 'mix-blend-mode: difference;';
+    else if (blendMode === 'multiply') blendStyle = 'mix-blend-mode: multiply;';
+
+    let gridOverlay = '';
+    if (drawGridLines && gridN > 1) {
+      gridOverlay += `<g stroke="${cA}" stroke-opacity="0.25" stroke-width="1.5">`;
+      const cellW = W / gridN;
+      const cellH = H / gridN;
+      for (let i=1; i<gridN; i++) {
+        gridOverlay += `<path d="`;
+        for (let pt=0; pt<=H; pt+=20) {
+           let ptX = i * cellW; let ptY = pt;
+           if (warpBg) { const w = applyGlobalWarp(ptX, ptY, W, H, warpX, warpY, waveFreq, wPhase); ptX = w.x; ptY = w.y; }
+           gridOverlay += `${pt===0?'M':'L'} ${ptX.toFixed(1)} ${ptY.toFixed(1)} `;
+        }
+        gridOverlay += `" fill="none" />`;
+        gridOverlay += `<path d="`;
+        for (let pt=0; pt<=W; pt+=20) {
+           let ptX = pt; let ptY = i * cellH;
+           if (warpBg) { const w = applyGlobalWarp(ptX, ptY, W, H, warpX, warpY, waveFreq, wPhase); ptX = w.x; ptY = w.y; }
+           gridOverlay += `${pt===0?'M':'L'} ${ptX.toFixed(1)} ${ptY.toFixed(1)} `;
+        }
+        gridOverlay += `" fill="none" />`;
+      }
+      gridOverlay += `</g>`;
+    }
+
+    const svgOut = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%" style="background-color: ${isTrans ? 'transparent' : cBg};">
+        <defs>${defs}</defs>
+        ${finalWaveLayer}
+        <g style="${blendStyle}">
+           ${blurredForeground}
+           ${finalCrispGroup}
+        </g>
+        ${gridOverlay}
+      </svg>
+    `;
+
+    document.getElementById('svgHost').innerHTML = svgOut;
+  }
+
+  function getSvgBlob() {
+    const svgEl = document.querySelector('#svgHost svg');
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgEl);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+    return new Blob([source], {type:"image/svg+xml;charset=utf-8"});
+  }
+
+  document.getElementById('btnSvg').addEventListener('click', () => {
+    const url = URL.createObjectURL(getSvgBlob());
+    const a = document.createElement('a');
+    a.href = url; a.download = `nodal-vector-${Date.now()}.svg`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById('btnPng').addEventListener('click', () => {
+    const btn = document.getElementById('btnPng');
+    const originalText = btn.innerText;
+    btn.innerText = 'PROCESANDO...';
+    btn.style.pointerEvents = 'none';
+    
+    const res = parseInt(document.getElementById('exportRes').value);
+    const isTrans = document.getElementById('paramTrans').checked;
+    const cBg = document.getElementById('colBg').value;
+    
+    const svgBlob = getSvgBlob();
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = res; canvas.height = res;
+      const ctx = canvas.getContext('2d');
+      if (!isTrans) {
+        ctx.fillStyle = cBg;
+        ctx.fillRect(0,0,res,res);
+      }
+      ctx.drawImage(img, 0, 0, res, res);
+      URL.revokeObjectURL(url);
+      
+      canvas.toBlob(blob => {
+        const durl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = durl; a.download = `nodal-render-${Date.now()}.png`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(durl);
+        
+        btn.innerText = originalText;
+        btn.style.pointerEvents = 'auto';
+      }, 'image/png', 1.0);
+    };
+    img.src = url;
+  });
+
+  document.getElementById('btnJpg').addEventListener('click', () => {
+    const btn = document.getElementById('btnJpg');
+    const originalText = btn.innerText;
+    btn.innerText = 'PROCESANDO...';
+    btn.style.pointerEvents = 'none';
+    
+    const res = parseInt(document.getElementById('exportRes').value);
+    const cBg = document.getElementById('colBg').value;
+    
+    const svgBlob = getSvgBlob();
+    const url = URL.createObjectURL(svgBlob);
+    const img = new Image();
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = res; canvas.height = res;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = cBg;
+      ctx.fillRect(0,0,res,res);
+      ctx.drawImage(img, 0, 0, res, res);
+      URL.revokeObjectURL(url);
+      
+      canvas.toBlob(blob => {
+        const durl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = durl; a.download = `nodal-render-${Date.now()}.jpg`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(durl);
+        
+        btn.innerText = originalText;
+        btn.style.pointerEvents = 'auto';
+      }, 'image/jpeg', 0.95);
+    };
+    img.src = url;
+  });
+
+  loadSavedCustomPresets();
+  updateControlsState();
+  render();
+  recordHistory();
+</script>
+</body>
+</html>
