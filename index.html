@@ -64,6 +64,7 @@
   input[type="color"] { width: 100%; height: 26px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: transparent; padding: 0; }
   select, input[type="text"] { width: 100%; padding: 6px 8px; background: #111; border: 1px solid var(--border); color: var(--text-primary); font-family: inherit; font-size: 10px; border-radius: 4px; outline: none; }
   input[type="text"]:focus { border-color: var(--accent); }
+  input[type="file"] { width: 100%; padding: 4px; font-size: 9px; color: var(--text-primary); background: #222; border: 1px dashed var(--border); border-radius: 4px; cursor: pointer; }
   
   .toggle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .toggle-btn { background: #111; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 4px; font-size: 9px; text-transform: uppercase; cursor: pointer; border-radius: 4px; text-align: center; font-weight: 600; transition: all 0.2s; }
@@ -79,7 +80,12 @@
   .action-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
   .action-btn.secondary { background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); margin-top: auto; }
   .action-btn.secondary:hover { background: var(--text-primary); color: var(--bg-main); }
-  .action-btn.random { background: #fff; margin-top: auto; }
+  
+  .random-wrap { display: flex; gap: 8px; margin-top: auto; }
+  .random-wrap .action-btn.random { background: #fff; flex: 1; }
+  .seed-lock { display: flex; align-items: center; justify-content: center; background: #222; border: 1px solid var(--border); padding: 0 12px; cursor: pointer; border-radius: var(--radius); font-size: 14px; transition: 0.2s; filter: grayscale(1); opacity: 0.5;}
+  .seed-lock:hover { opacity: 1; }
+  .seed-lock.locked { filter: grayscale(0); opacity: 1; border-color: var(--accent); background: #333; }
 
   .preset-row { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
   .preset-row button { flex: 1; padding: 6px 2px; font-size: 8px; font-weight: 700; cursor: pointer; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px; text-transform: uppercase; transition: 0.2s; text-align: center; }
@@ -129,10 +135,10 @@
       </div>
       <div id="presetsWrap">
           <div class="preset-row">
-            <button onclick="applyStudioPreset('moire')">Moiré Óptico</button>
+            <button onclick="applyStudioPreset('chladni_pure')">Chladni Puro</button>
+            <button onclick="applyStudioPreset('gooey')">Gooey Cells</button>
             <button onclick="applyStudioPreset('data')">Data Matrix</button>
             <button onclick="applyStudioPreset('typo')">Typo Scatter</button>
-            <button onclick="applyStudioPreset('gooey')">Gooey Cells</button>
           </div>
           <div class="preset-row">
             <button onclick="applyStudioPreset('swiss')">Swiss Grid</button>
@@ -197,9 +203,26 @@
         <button class="shape-btn" data-val="hash" title="Trama / Hash">▤</button>
         <button class="shape-btn" data-val="text" title="Tipografía (Letras)">A</button>
       </div>
+      
+      <!-- Tipografía y Texturas -->
       <div class="grid-2" style="margin-top: 8px;">
         <div class="control full">
           <input type="text" id="customText" value="ITERATION" placeholder="Texto base (ej: N O D A L)">
+        </div>
+        <div class="control">
+          <label>Tipografía</label>
+          <select id="paramFontFamily">
+            <option value="'IBM Plex Mono', monospace" selected>IBM Plex Mono</option>
+            <option value="'Inter', sans-serif">Inter</option>
+            <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+            <option value="'Syne', sans-serif">Syne</option>
+            <option value="'Unbounded', display">Unbounded</option>
+            <option value="'Cinzel', serif">Cinzel (Serif)</option>
+          </select>
+        </div>
+        <div class="control">
+          <label>Fuente (OTF/TTF/WOFF)</label>
+          <input type="file" id="fontUpload" accept=".ttf,.otf,.woff,.woff2">
         </div>
         <div class="control">
           <label>Rotación Estática <span class="val-display" id="valAngle">0</span>°</label>
@@ -215,7 +238,7 @@
             <option value="dots">Punteado (Halftone)</option>
           </select>
         </div>
-        <div class="control" id="ctrlTexDen">
+        <div class="control full" id="ctrlTexDen">
           <label>Densidad Trama <span class="val-display" id="valTexDen">4.0</span></label>
           <input type="range" id="paramTexDen" min="1" max="20" value="4" step="0.5">
         </div>
@@ -285,7 +308,7 @@
         </div>
         <div class="control full">
           <label>Densidad de Formas <span class="val-display" id="valDen">1800</span></label>
-          <input type="range" id="paramDen" min="50" max="8000" value="1800" step="50">
+          <input type="range" id="paramDen" min="50" max="15000" value="1800" step="50">
         </div>
         <div class="control">
           <label>Tamaño Mín. <span class="val-display" id="valMinS">0.0</span></label>
@@ -354,8 +377,8 @@
           <input type="range" id="paramBlur" min="0" max="15" value="0" step="0.5">
         </div>
         <div class="control">
-          <label>Fusión Líquida (Gooey) <span class="val-display" id="valGooey">0</span></label>
-          <input type="range" id="paramGooey" min="0" max="30" value="0" step="1">
+          <label>Fusión Líquida <span class="val-display" id="valGooey">0</span></label>
+          <input type="range" id="paramGooey" min="0" max="80" value="0" step="1">
         </div>
         <div class="control full">
           <label>Ruido Dinámico <span class="val-display" id="valNoise">0.15</span></label>
@@ -387,7 +410,10 @@
       </div>
     </div>
 
-    <button class="action-btn random" id="btnRandom">MUTAR EXPERIMENTO 🎲</button>
+    <div class="random-wrap">
+      <button class="action-btn random" id="btnRandom">MUTAR PARÁMETROS 🎲</button>
+      <div class="seed-lock" id="btnLockSeed" title="Bloquear posiciones (Semilla)">🔓 Posición</div>
+    </div>
   </div>
 
   <!-- Panel de Vista Previa -->
@@ -411,14 +437,15 @@
 </div>
 
 <script>
-  // Estado global y candados
   const state = {
     pattern: 'chladni',
     shapes: ['circle'],
     seed: Math.floor(Math.random() * 1e9),
     W: 1000,
     H: 1000,
-    locks: { pattern: false, shapes: false, morph: false, wave: false, grid: false, style: false }
+    locks: { pattern: false, shapes: false, morph: false, wave: false, grid: false, style: false, seed: false },
+    customFontBase64: null,
+    customFontName: null
   };
 
   let historyStack = [];
@@ -431,9 +458,11 @@
       shapes: [...state.shapes],
       seed: state.seed,
       locks: {...state.locks},
+      customFontBase64: state.customFontBase64,
+      customFontName: state.customFontName,
       ui: {}
     };
-    document.querySelectorAll('input:not([type="button"]):not([type="text"]), select').forEach(el => {
+    document.querySelectorAll('input:not([type="button"]):not([type="file"]), select').forEach(el => {
       if (el.id && el.id !== 'newPresetName') {
         s.ui[el.id] = el.type === 'checkbox' ? el.checked : el.value;
       }
@@ -492,6 +521,8 @@
     state.shapes = [...s.shapes];
     state.seed = s.seed;
     state.locks = {...s.locks};
+    state.customFontBase64 = s.customFontBase64;
+    state.customFontName = s.customFontName;
     
     Object.keys(s.ui).forEach(id => {
       const el = document.getElementById(id);
@@ -509,6 +540,9 @@
        btn.classList.toggle('locked', state.locks[key]);
        btn.innerText = state.locks[key] ? '🔒' : '🔓';
     });
+    const seedBtn = document.getElementById('btnLockSeed');
+    seedBtn.classList.toggle('locked', state.locks.seed);
+    seedBtn.innerText = state.locks.seed ? '🔒 Posición' : '🔓 Posición';
 
     document.getElementById('wrapColB').style.display = (s.ui.paramPalMode === '2' || s.ui.paramPalMode === '3') ? 'flex' : 'none';
     document.getElementById('wrapColC').style.display = s.ui.paramPalMode === '3' ? 'flex' : 'none';
@@ -541,7 +575,6 @@
     }
   });
 
-  // Presets Save System
   function loadSavedCustomPresets() {
     const grid = document.getElementById('savedPresetsList');
     grid.innerHTML = '';
@@ -580,6 +613,33 @@
     localStorage.setItem('nodal_presets', JSON.stringify(saved));
     document.getElementById('newPresetName').value = '';
     loadSavedCustomPresets();
+  });
+
+  document.getElementById('fontUpload').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+          state.customFontBase64 = evt.target.result;
+          state.customFontName = 'CustomFont_' + Date.now();
+          
+          const newStyle = document.createElement('style');
+          newStyle.appendChild(document.createTextNode(`
+              @font-face { font-family: '${state.customFontName}'; src: url('${state.customFontBase64}'); }
+          `));
+          document.head.appendChild(newStyle);
+          
+          const select = document.getElementById('paramFontFamily');
+          const opt = document.createElement('option');
+          opt.value = `'${state.customFontName}'`;
+          opt.text = "Custom: " + file.name.substring(0, 15);
+          select.add(opt, 0);
+          select.value = opt.value;
+          
+          render();
+          recordHistory();
+      };
+      reader.readAsDataURL(file);
   });
 
   function mulberry32(a) {
@@ -628,6 +688,23 @@
     renderTimeout = requestAnimationFrame(render);
   }
 
+  document.querySelectorAll('.lock-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const key = e.target.dataset.lock;
+      state.locks[key] = !state.locks[key];
+      e.target.classList.toggle('locked', state.locks[key]);
+      e.target.innerText = state.locks[key] ? '🔒' : '🔓';
+      recordHistory();
+    });
+  });
+
+  document.getElementById('btnLockSeed').addEventListener('click', e => {
+      state.locks.seed = !state.locks.seed;
+      e.target.classList.toggle('locked', state.locks.seed);
+      e.target.innerText = state.locks.seed ? '🔒 Posición' : '🔓 Posición';
+      recordHistory();
+  });
+
   bindSlider('paramN', 'valN');
   bindSlider('paramM', 'valM');
   document.getElementById('paramDen').addEventListener('input', e => { document.getElementById('valDen').innerText = e.target.value; renderDebounced(); });
@@ -647,7 +724,7 @@
   bindSlider('waveBlur', 'valWaveBlur');
   bindSlider('paramTexDen', 'valTexDen');
 
-  ['colA', 'colB', 'colC', 'colBg', 'waveColor', 'waveStyle', 'paramGridN', 'paramGridLines', 'paramTrans', 'waveEnabled', 'waveSyncColor', 'drawForeground', 'paramFillType', 'paramBlend', 'warpTargetFg', 'warpTargetBg'].forEach(id => {
+  ['colA', 'colB', 'colC', 'colBg', 'waveColor', 'waveStyle', 'paramGridN', 'paramGridLines', 'paramTrans', 'waveEnabled', 'waveSyncColor', 'drawForeground', 'paramFillType', 'paramBlend', 'warpTargetFg', 'warpTargetBg', 'paramFontFamily'].forEach(id => {
     const el = document.getElementById(id);
     if(el) {
       el.addEventListener('change', () => {
@@ -722,11 +799,10 @@
     });
   });
 
-  // PRESETS DE ESTUDIO (Completamente Diferenciados)
   function applyStudioPreset(type) {
-    state.seed = Math.floor(Math.random() * 1e9);
+    if (!state.locks.seed) state.seed = Math.floor(Math.random() * 1e9);
     
-    // RESET MASIVO (Para evitar que se mezclen variables viejas)
+    // HARD RESET
     document.getElementById('paramBlend').value = 'normal';
     document.getElementById('paramTrans').checked = false;
     document.getElementById('warpTargetFg').checked = true;
@@ -739,19 +815,30 @@
     setVal('paramBlur', 'valBlur', '0.0');
     document.getElementById('paramFillType').value = 'solid';
     
-    if (type === 'moire') {
+    if (type === 'chladni_pure') {
       state.pattern = 'chladni'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '1.0');
-      document.getElementById('paramDen').value = 4500; document.getElementById('valDen').innerText = 4500;
+      setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '7.0');
+      document.getElementById('paramDen').value = 10000; document.getElementById('valDen').innerText = 10000;
       setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '2.5');
-      setVal('paramThresh', 'valThresh', '0.15'); setVal('paramNoise', 'valNoise', '0.05');
+      setVal('paramThresh', 'valThresh', '0.05'); setVal('paramNoise', 'valNoise', '0.00'); 
       document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '1';
+      document.getElementById('colA').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2';
+      document.getElementById('waveEnabled').checked = false; document.getElementById('drawForeground').checked = true;
+    }
+    else if (type === 'gooey') {
+      state.pattern = 'dataScatter'; state.shapes = ['circle'];
+      setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '4.0'); 
+      document.getElementById('paramDen').value = 800; document.getElementById('valDen').innerText = 800;
+      setVal('paramMinS', 'valMinS', '10.0'); setVal('paramMaxS', 'valMaxS', '60.0');
+      setVal('paramThresh', 'valThresh', '0.60'); setVal('paramNoise', 'valNoise', '0.25');
+      setVal('paramGooey', 'valGooey', '20'); 
+      document.getElementById('paramGridN').value = '4'; document.getElementById('paramGridLines').checked = true;
       document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#141414'; document.getElementById('colB').value = '#f5e400'; document.getElementById('colC').value = '#8f8a7d'; document.getElementById('colBg').value = '#c7c4bb';
-      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'tin_warp'; document.getElementById('waveSyncColor').checked = true;
-      setVal('waveRows', 'valWaveRows', '32'); setVal('waveAmp', 'valWaveAmp', '2.5'); setVal('waveFreq', 'valWaveFreq', '2.0'); document.getElementById('waveColor').value = '#222222';
+      document.getElementById('colA').value = '#ff0055'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2'; 
+      document.getElementById('waveEnabled').checked = false; 
       document.getElementById('drawForeground').checked = true;
-    } 
+    }
     else if (type === 'data') {
       state.pattern = 'dataMatrix'; state.shapes = ['circle'];
       setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '10.0'); 
@@ -809,9 +896,9 @@
       state.pattern = 'sequencer'; state.shapes = ['line'];
       setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '4.0'); 
       document.getElementById('paramDen').value = 400; document.getElementById('valDen').innerText = 400;
-      setVal('paramMinS', 'valMinS', '20.0'); setVal('paramMaxS', 'valMaxS', '120.0');
+      setVal('paramMinS', 'valMinS', '20.0'); setVal('paramMaxS', 'valMaxS', '100.0');
       setVal('paramThresh', 'valThresh', '0.80'); setVal('paramNoise', 'valNoise', '0.0');
-      setVal('paramAngle', 'valAngle', '90'); // Rotación fija a 90 (cápsulas)
+      setVal('paramAngle', 'valAngle', '90'); 
       document.getElementById('paramGridN').value = '1'; 
       document.getElementById('paramPalMode').value = '1';
       document.getElementById('colA').value = '#4dff5b'; document.getElementById('colBg').value = '#222222'; 
@@ -832,18 +919,16 @@
       setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '1.0'); setVal('waveFreq', 'valWaveFreq', '2.0');
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'gooey') {
-      state.pattern = 'dataScatter'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '4.0'); 
-      document.getElementById('paramDen').value = 800; document.getElementById('valDen').innerText = 800;
-      setVal('paramMinS', 'valMinS', '10.0'); setVal('paramMaxS', 'valMaxS', '60.0');
-      setVal('paramThresh', 'valThresh', '0.60'); setVal('paramNoise', 'valNoise', '0.25');
-      setVal('paramGooey', 'valGooey', '15'); // EFECTO METABALL ALTO
-      document.getElementById('paramGridN').value = '4'; document.getElementById('paramGridLines').checked = true;
-      document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#ff0055'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2'; 
-      document.getElementById('waveEnabled').checked = false; 
-      document.getElementById('drawForeground').checked = true;
+    else if (type === 'sand') {
+      state.pattern = 'chladni'; state.shapes = ['circle'];
+      setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '4.0');
+      document.getElementById('paramDen').value = 8000; document.getElementById('valDen').innerText = 8000;
+      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '2.5');
+      setVal('paramThresh', 'valThresh', '0.08'); setVal('paramNoise', 'valNoise', '0.10');
+      document.getElementById('paramGridN').value = '1'; 
+      document.getElementById('paramPalMode').value = '2';
+      document.getElementById('colA').value = '#ffffff'; document.getElementById('colB').value = '#f0db6e'; document.getElementById('colBg').value = '#111111';
+      document.getElementById('waveEnabled').checked = false; document.getElementById('drawForeground').checked = true;
     }
 
     document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
@@ -857,7 +942,9 @@
   }
 
   document.getElementById('btnRandom').addEventListener('click', () => {
-    state.seed = Math.floor(Math.random() * 1e9);
+    if (!state.locks.seed) {
+        state.seed = Math.floor(Math.random() * 1e9);
+    }
 
     if (!state.locks.pattern) {
       const patterns = ['chladni', 'chladniRadial', 'matrixWarp', 'sequencer', 'dataScatter', 'ghostStrings', 'concentricWaves', 'dataMatrix'];
@@ -942,7 +1029,6 @@
     recordHistory();
   });
 
-  // Utils Matemáticos
   function applyGlobalWarp(px, py, W, H, wx, wy, freq, phase) {
       if (wx === 0 && wy === 0) return {x: px, y: py};
       const nx = px / W;
@@ -960,7 +1046,7 @@
     return cC;
   }
 
-  function buildShapeSvg(type, x, y, size, color, angle, seed, txtSource, fillType) {
+  function buildShapeSvg(type, x, y, size, color, angle, seed, txtSource, fillType, fontFamily) {
     if (size <= 0.0) return ''; 
     const strokeW = Math.max(0.5, size * 0.15);
     let fillAttr = fillType === 'solid' ? color : `url(#${fillType}_${color.replace('#','')})`;
@@ -999,7 +1085,7 @@
     }
     else if (type === 'text') {
       const char = txtSource.charAt(Math.floor(seed * txtSource.length)) || 'A';
-      return `<text x="${x.toFixed(1)}" y="${(y + size*0.35).toFixed(1)}" font-family="IBM Plex Mono" font-weight="700" font-size="${(size*1.2).toFixed(1)}" fill="${fillAttr}" text-anchor="middle" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">${char}</text>`;
+      return `<text x="${x.toFixed(1)}" y="${(y + size*0.35).toFixed(1)}" font-family="${fontFamily.replace(/"/g, "'")}" font-weight="700" font-size="${(size*1.2).toFixed(1)}" fill="${fillAttr}" text-anchor="middle" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">${char}</text>`;
     }
     return '';
   }
@@ -1044,16 +1130,20 @@
           let keep = false;
 
           if (state.pattern === 'chladni') {
-            val = Math.cos(p.n*Math.PI*x)*Math.cos(p.m*Math.PI*y) + c_sign * Math.cos(p.m*Math.PI*x + c_phase)*Math.cos(p.n*Math.PI*y);
+            let pN = p.noise === 0 ? Math.round(p.n) : p.n;
+            let pM = p.noise === 0 ? Math.round(p.m) : p.m;
+            val = Math.cos(pN*Math.PI*x)*Math.cos(pM*Math.PI*y) + c_sign * Math.cos(pM*Math.PI*x + c_phase)*Math.cos(pN*Math.PI*y);
             angle = val * 180;
             val += (rng() - 0.5) * p.noise * 2.0;
             keep = Math.abs(val) <= p.thresh;
           } 
           else if (state.pattern === 'chladniRadial') {
+            let pN = p.noise === 0 ? Math.round(p.n) : p.n;
+            let pM = p.noise === 0 ? Math.round(p.m) : p.m;
             const dx = x-0.5, dy = y-0.5;
             const r = Math.sqrt(dx*dx+dy*dy)*3.0;
             const theta = Math.atan2(dy,dx);
-            val = Math.cos(p.n*Math.PI*r)*Math.cos(p.m*theta + c_phase);
+            val = Math.cos(pN*Math.PI*r)*Math.cos(pM*theta + c_phase);
             angle = theta * (180/Math.PI) + val * 90;
             val += (rng() - 0.5) * p.noise * 2.0;
             keep = Math.abs(val) <= p.thresh;
@@ -1104,13 +1194,12 @@
             x = (colIdx + 0.5) / cols; 
             y = Math.pow(rng(), 1.5); 
             val = Math.sin(y * p.n * Math.PI * 2 + x * 10);
-            angle = 0;
+            angle = 90; 
             keep = rng() <= p.thresh;
           }
 
           if (!keep) continue;
 
-          // Ruido dinámico posicional
           if (state.pattern !== 'matrixWarp' && state.pattern !== 'sequencer' && state.pattern !== 'concentricWaves' && state.pattern !== 'ghostStrings') {
             x += (rng() - 0.5) * p.noise * 0.05;
             y += (rng() - 0.5) * p.noise * 0.05;
@@ -1165,6 +1254,7 @@
     const blendMode = document.getElementById('paramBlend').value;
     const fillType = document.getElementById('paramFillType').value;
     const texDen = parseFloat(document.getElementById('paramTexDen').value);
+    const fontFamily = document.getElementById('paramFontFamily').value;
     
     let txtSource = document.getElementById('customText').value.trim();
     if(txtSource === '') txtSource = 'ITERATION';
@@ -1227,7 +1317,6 @@
            fX = wp.x; fY = wp.y;
         }
 
-        // Add static or random rotation
         let fAngle = globalAngle !== 0 ? globalAngle : el.angle;
         if (state.pattern !== 'sequencer' && state.pattern !== 'concentricWaves' && globalAngle === 0) {
             fAngle += (rng() - 0.5) * p.noise * 360;
@@ -1256,7 +1345,7 @@
         const shapeIdx = Math.floor(Math.abs(el.val) * 10 * state.shapes.length) % state.shapes.length;
         const type = state.shapes[shapeIdx];
         
-        let finalSvg = buildShapeSvg(type, fX, fY, el.s, color, fAngle, colorSeed, txtSource, fillType);
+        let finalSvg = buildShapeSvg(type, fX, fY, el.s, color, fAngle, colorSeed, txtSource, fillType, fontFamily);
         if (!finalSvg) continue;
 
         if (blurAmt > 0 && rng() < 0.3) {
@@ -1352,6 +1441,13 @@
     }
 
     let defs = '';
+    
+    if (state.customFontBase64 && fontFamily.includes(state.customFontName)) {
+        defs += `<style>@font-face { font-family: '${state.customFontName}'; src: url('${state.customFontBase64}'); }</style>`;
+    } else {
+        defs += `<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&amp;family=IBM+Plex+Mono:wght@500;700&amp;family=Inter:wght@700;900&amp;family=Space+Grotesk:wght@700&amp;family=Syne:wght@700;800&amp;family=Unbounded:wght@700;900&amp;display=swap');</style>`;
+    }
+
     colorsInUse.forEach(c => {
       const cHex = c.replace('#','');
       if (fillType === 'stripesV') {
@@ -1392,11 +1488,10 @@
       blurredForeground = `<g filter="url(#dofBlur)">${blurredGroup.join('')}</g>`;
     }
 
-    // Efecto Metaball / Gooey
     if (gooeyAmt > 0) {
       defs += `<filter id="gooeyFilter" x="-50%" y="-50%" width="200%" height="200%">
                  <feGaussianBlur in="SourceGraphic" stdDeviation="${gooeyAmt}" result="blur" />
-                 <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+                 <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -10" result="goo" />
                  <feComposite in="SourceGraphic" in2="goo" operator="atop" />
                </filter>`;
       finalCrispGroup = `<g filter="url(#gooeyFilter)">${finalCrispGroup}</g>`;
@@ -1461,7 +1556,7 @@
     if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
         source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
     }
-    source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+    source = '<?xml version="1.0" standalone="no"?>\n' + source;
     return new Blob([source], {type:"image/svg+xml;charset=utf-8"});
   }
 
