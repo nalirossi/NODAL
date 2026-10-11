@@ -95,7 +95,8 @@
   .preview-wrapper { flex: 1; min-height: 0; background: #111; border: 1px solid var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; background-image: radial-gradient(#222 1px, transparent 1px); background-size: 20px 20px; }
   
   #svgHost { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 10px; }
-  #svgHost svg { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8); transition: transform 0.2s; }
+  #svgHost { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 10px; box-sizing: border-box; }
+  #svgHost svg { width: 100%; height: 100%; max-width: 100%; max-height: 100%; aspect-ratio: 1 / 1; object-fit: contain; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: block; transition: transform 0.2s; }
   
   .export-bar { margin-top: 16px; display: flex; gap: 12px; align-items: center; height: 42px; flex-shrink: 0; background: var(--panel-bg); padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); }
   .export-bar select { width: auto; min-width: 130px; height: 100%; border: none; background: transparent; font-weight: 600;}
@@ -109,6 +110,12 @@
   .saved-preset-btn { background: #222; border: 1px solid var(--border); color: #ddd; padding: 6px; font-size: 9px; cursor: pointer; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase;}
   .saved-preset-btn:hover { background: #333; }
   .del-preset { color: #ff5555; background: none; border: none; cursor: pointer; font-weight: bold; padding: 0 4px; font-size: 12px;}
+
+  .draggable-word { cursor: grab; user-select: none; pointer-events: all; transition: opacity 0.15s; }
+  .draggable-word:hover text { opacity: 0.8; filter: drop-shadow(0 0 8px var(--accent)); }
+  .draggable-word:hover rect { opacity: 0.9; }
+  .draggable-word.dragging { cursor: grabbing !important; }
+
 </style>
 </head>
 <body>
@@ -119,7 +126,7 @@
     <div class="brand">
       <div>
         <h1>NODAL ENGINE</h1>
-        <p>Síntesis Gráfica Paramétrica</p>
+        <p>SONOS // Síntesis Gráfica y Acústica</p>
       </div>
       <div class="history-nav">
         <button id="btnUndo" disabled title="Deshacer (Ctrl+Z)">↩</button>
@@ -135,18 +142,23 @@
       </div>
       <div id="presetsWrap">
           <div class="preset-row">
-            <button onclick="applyStudioPreset('chladni_pure')">Chladni Puro</button>
-            <button onclick="applyStudioPreset('gooey')">Gooey Cells</button>
-            <button onclick="applyStudioPreset('data')">Data Matrix</button>
-            <button onclick="applyStudioPreset('typo')">Typo Scatter</button>
+            <button onclick="applyStudioPreset('sonos_targets')" title="Dianas concéntricas con aura y maquetación japonesa">Dianas Sonoras</button>
+            <button onclick="applyStudioPreset('sonos_acid')" title="Constelación ácida y tipografía masiva">SONOS Ácido</button>
+            <button onclick="applyStudioPreset('matriz_nodal')" title="Malla densa de micro-dianas acústicas">Matriz Nodal</button>
+            <button onclick="applyStudioPreset('nube_sonos')" title="Nube tipográfica dispersa sobre ondas">Nube Sonora</button>
           </div>
           <div class="preset-row">
-            <button onclick="applyStudioPreset('swiss')">Swiss Grid</button>
-            <button onclick="applyStudioPreset('neon')">Neon Beats</button>
-            <button onclick="applyStudioPreset('pastel')">Pastel Warp</button>
-            <button onclick="applyStudioPreset('sand')">Cymatics Sand</button>
+            <button onclick="applyStudioPreset('capsulas_sonos')" title="Cápsulas de audio con halo térmico neón">Cápsulas Rigor</button>
+            <button onclick="applyStudioPreset('horizonte_sonos')" title="Línea de tiempo espectral y bloques de frecuencia">Horizonte</button>
+            <button onclick="applyStudioPreset('chladni_pure')" title="Cimática nodal pura a 432Hz sobre basalto">Chladni 432Hz</button>
+            <button onclick="applyStudioPreset('op_moire')" title="Moiré cinético de alto contraste Vasarely">Moiré Óptico</button>
           </div>
-          
+          <div class="preset-row">
+            <button onclick="applyStudioPreset('riley_flux')" title="Ondas fluidas cinéticas estilo Bridget Riley">Riley Flux</button>
+            <button onclick="applyStudioPreset('spectro_fm')" title="Secuenciador polifónico FM de sintetizador">Espectro FM</button>
+            <button onclick="applyStudioPreset('mandala_polar')" title="Resonancia polar circular armónica">Mandala Polar</button>
+            <button onclick="applyStudioPreset('ferrofluid')" title="Fluido acústico denso con fusión metaballs">Ferrofluido</button>
+          </div>
           <div class="custom-presets-container" style="border-top: 1px solid #333; margin-top: 8px; padding-top: 8px;">
             <div style="display: flex; gap: 6px;">
               <input type="text" id="newPresetName" placeholder="Guardar mi preset...">
@@ -166,8 +178,8 @@
         </div>
       </div>
       <div class="grid-2" style="margin-top:8px;">
-        <button class="action-btn" id="btnSoloBg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">⚡ SOLO FONDO</button>
-        <button class="action-btn" id="btnSoloFg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">⚡ SOLO FORMAS</button>
+        <button class="action-btn" id="btnSoloBg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">SOLO FONDO</button>
+        <button class="action-btn" id="btnSoloFg" style="background:#222; color: #fff; padding:6px; border:1px solid #444;">SOLO FORMAS</button>
       </div>
     </div>
 
@@ -175,11 +187,13 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">Matriz Estructural</div>
-        <button class="lock-btn" data-lock="pattern" title="Bloquear matriz">🔓</button>
+        <button class="lock-btn" data-lock="pattern" title="Bloquear matriz">LIB</button>
       </div>
       <div class="toggle-grid" id="patternToggles">
         <button class="toggle-btn active" data-val="chladni">Placa Chladni 2D</button>
         <button class="toggle-btn" data-val="chladniRadial">Chladni Polar Radial</button>
+        <button class="toggle-btn" data-val="spectralHorizon">Horizonte Espectral</button>
+        <button class="toggle-btn" data-val="cymaticMatrix">Matriz Nodal Densa</button>
         <button class="toggle-btn" data-val="dataMatrix">Data Matrix (QuadTree)</button>
         <button class="toggle-btn" data-val="matrixWarp">Warp Matrix</button>
         <button class="toggle-btn" data-val="concentricWaves">Rizos Concéntricos</button>
@@ -193,10 +207,14 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">Composición Geométrica</div>
-        <button class="lock-btn" data-lock="shapes" title="Bloquear formas">🔓</button>
+        <button class="lock-btn" data-lock="shapes" title="Bloquear formas">LIB</button>
       </div>
-      <div class="shape-grid" id="shapeToggles">
+      <div class="shape-grid" id="shapeToggles" style="grid-template-columns: repeat(5, 1fr);">
         <button class="shape-btn active" data-val="circle" title="Círculos">●</button>
+        <button class="shape-btn" data-val="target" title="Dianas / Orbes Concéntricos">◉</button>
+        <button class="shape-btn" data-val="pill" title="Cápsulas / Barras MIDI">⬬</button>
+        <button class="shape-btn" data-val="ring" title="Anillos Acústicos">◎</button>
+        <button class="shape-btn" data-val="glow" title="Aura / Spray Luminoso">✦</button>
         <button class="shape-btn" data-val="rect" title="Cuadrados">■</button>
         <button class="shape-btn" data-val="triangle" title="Triángulos">▲</button>
         <button class="shape-btn" data-val="line" title="Líneas">|</button>
@@ -207,7 +225,7 @@
       <!-- Tipografía y Texturas -->
       <div class="grid-2" style="margin-top: 8px;">
         <div class="control full">
-          <input type="text" id="customText" value="ITERATION" placeholder="Texto base (ej: N O D A L)">
+          <input type="text" id="customText" value="SONOS festival de música electroacústica Diálogos sonoros Vibración Precisión rigurosa Rigor que se electrifica">
         </div>
         <div class="control">
           <label>Tipografía</label>
@@ -249,7 +267,7 @@
     <div class="section" style="border-color: var(--accent);">
       <div class="section-header">
         <div class="section-title" style="color:var(--accent);">Arte Óptico (Background)</div>
-        <button class="lock-btn" data-lock="wave" title="Bloquear óptica">🔓</button>
+        <button class="lock-btn" data-lock="wave" title="Bloquear óptica">LIB</button>
       </div>
       <div class="grid-2">
         <div class="control full" id="ctrlWaveStyle">
@@ -295,7 +313,7 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">Física y Masa</div>
-        <button class="lock-btn" data-lock="morph" title="Bloquear morfología">🔓</button>
+        <button class="lock-btn" data-lock="morph" title="Bloquear morfología">LIB</button>
       </div>
       <div class="grid-2">
         <div class="control" id="ctrlN">
@@ -329,7 +347,7 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">Modulación Espacial (Warp)</div>
-        <button class="lock-btn" data-lock="grid" title="Bloquear grilla">🔓</button>
+        <button class="lock-btn" data-lock="grid" title="Bloquear grilla">LIB</button>
       </div>
       <div class="grid-2">
         <div class="control">
@@ -369,7 +387,7 @@
     <div class="section">
       <div class="section-header">
         <div class="section-title">Lentes, Efectos y Paleta</div>
-        <button class="lock-btn" data-lock="style" title="Bloquear estilo">🔓</button>
+        <button class="lock-btn" data-lock="style" title="Bloquear estilo">LIB</button>
       </div>
       <div class="grid-2">
         <div class="control">
@@ -410,9 +428,74 @@
       </div>
     </div>
 
+        <!-- Maquetación Editorial (Póster Suizo / Galería) -->
+    <div class="section" style="border-color: #555;">
+      <div class="section-header">
+        <div class="section-title" style="color:#fff;">Maquetación Editorial (Póster)</div>
+        <label class="checkbox-wrap" style="color:var(--accent); font-weight:700;">
+          <input type="checkbox" id="posterLayoutEnabled" checked> Activar
+        </label>
+      </div>
+      <div class="grid-2">
+        <div class="control full">
+          <label>Plantilla Editorial</label>
+          <select id="posterLayoutStyle">
+            <option value="none">Ninguna (Solo Arte Generativo)</option>
+            <option value="swiss_header">01 // Suizo Clásico (SONOS // Festival)</option>
+            <option value="intervals">02 // Constelación Nodal (Titular + Nodos)</option>
+            <option value="poster_target" selected>03 // Dianas Minimal (Ficha Sonora)</option>
+            <option value="poster_capsules">04 // Cápsulas Sonoras (Pastillas de Rigor)</option>
+            <option value="deconstructed">05 // Desconstrucción Tipográfica (Modular)</option>
+          </select>
+        </div>
+        <div class="control full">
+          <label style="color:var(--accent); border-bottom:1px solid #333; padding-bottom:3px; margin-top:2px;">
+            Editar, Mover y Borrar Frases / Misceláneas
+          </label>
+        </div>
+        <div class="control full">
+          <label>Elemento Seleccionado</label>
+          <select id="selectedWordToMove">
+            <option value="sonos" selected>1. SONOS</option>
+            <option value="festival">2. festival de música electroacústica</option>
+            <option value="dialogos">3. Diálogos sonoros</option>
+            <option value="vibracion">4. Vibración</option>
+            <option value="precision">5. Precisión rigurosa</option>
+            <option value="rigor">6. Rigor que se electrifica</option>
+            <option value="misc_symbol">7. Miscelánea: Símbolo / Asterisco (✱)</option>
+            <option value="misc_badge">8. Miscelánea: Ficha / Año (2026 // EDICIÓN 01)</option>
+            <option value="misc_lines">9. Miscelánea: Filetes / Marco Perimetral</option>
+          </select>
+        </div>
+        <div class="control full" id="phraseEditWrap">
+          <label>Texto de este Elemento</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="phraseTextInput" value="SONOS" style="flex:1;">
+            <button class="action-btn" id="btnToggleWordVis" style="width:auto; padding:6px 12px; background:#d32f2f; color:#fff;" title="Borrar u ocultar este elemento del afiche">BORRAR</button>
+          </div>
+        </div>
+        <div class="control">
+          <label>Posición X <span class="val-display" id="valWordX">0</span>px</label>
+          <input type="range" id="wordPosX" min="-200" max="1200" value="0" step="5">
+        </div>
+        <div class="control">
+          <label>Posición Y <span class="val-display" id="valWordY">0</span>px</label>
+          <input type="range" id="wordPosY" min="-200" max="1200" value="0" step="5">
+        </div>
+        <div class="control">
+          <label>Tamaño / Escala <span class="val-display" id="valWordScale">1.0</span>x</label>
+          <input type="range" id="wordScale" min="0.3" max="3.0" value="1.0" step="0.05">
+        </div>
+        <div class="control" style="display:flex; gap:4px; align-items:flex-end;">
+          <button class="action-btn" id="btnResetWordPos" style="background:#222; color:#fff; border:1px solid #444; padding:7px; font-size:9px; flex:1;" title="Restablecer posiciones originales">↺ RECENTRAR</button>
+          <button class="action-btn" id="btnRestoreAllWords" style="background:#222; color:#388e3c; border:1px solid #388e3c; padding:7px; font-size:9px; flex:1;" title="Restaurar todos los elementos borrados">+ VER TODAS</button>
+        </div>
+      </div>
+    </div>
+
     <div class="random-wrap">
-      <button class="action-btn random" id="btnRandom">MUTAR PARÁMETROS 🎲</button>
-      <div class="seed-lock" id="btnLockSeed" title="Bloquear posiciones (Semilla)">🔓 Posición</div>
+      <button class="action-btn random" id="btnRandom">MUTAR PARÁMETROS</button>
+      <div class="seed-lock" id="btnLockSeed" title="Bloquear posiciones (Semilla)">Posición</div>
     </div>
   </div>
 
@@ -437,15 +520,74 @@
 </div>
 
 <script>
+  
+  const defaultWordLayouts = {
+    swiss_header: {
+      sonos: { text: "SONOS", x: 50, y: 70, scale: 1.0, visible: true },
+      festival: { text: "festival de música electroacústica", x: 950, y: 70, scale: 1.0, visible: true },
+      dialogos: { text: "Diálogos sonoros", x: 50, y: 940, scale: 1.0, visible: true },
+      vibracion: { text: "VIBRACIÓN", x: 230, y: 940, scale: 1.0, visible: true },
+      precision: { text: "Precisión rigurosa", x: 670, y: 940, scale: 1.0, visible: true },
+      rigor: { text: "Rigor que se electrifica", x: 950, y: 940, scale: 1.0, visible: true },
+      misc_symbol: { text: "✱", x: 50, y: 75, scale: 1.0, visible: true },
+      misc_badge: { text: "2026 // EDICIÓN 01", x: 950, y: 75, scale: 1.0, visible: true },
+      misc_lines: { text: "Filetes Suizos", x: 0, y: 0, scale: 1.0, visible: true }
+    },
+    intervals: {
+      sonos: { text: "SONOS", x: 50, y: 940, scale: 1.0, visible: true },
+      festival: { text: "festival de música electroacústica", x: 90, y: 75, scale: 1.0, visible: true },
+      dialogos: { text: "● Diálogos sonoros", x: 65, y: 220, scale: 1.0, visible: true },
+      vibracion: { text: "● Vibración", x: 65, y: 340, scale: 1.0, visible: true },
+      precision: { text: "● Precisión rigurosa", x: 65, y: 460, scale: 1.0, visible: true },
+      rigor: { text: "● Rigor que se electrifica", x: 65, y: 580, scale: 1.0, visible: true },
+      misc_symbol: { text: "✱", x: 50, y: 75, scale: 1.0, visible: true },
+      misc_badge: { text: "2026 // EDICIÓN 01", x: 950, y: 68, scale: 1.0, visible: true },
+      misc_lines: { text: "Guías Nodales", x: 0, y: 0, scale: 1.0, visible: true }
+    },
+    poster_target: {
+      sonos: { text: "SONOS", x: 620, y: 710, scale: 1.0, visible: true },
+      festival: { text: "festival de música electroacústica", x: 620, y: 748, scale: 1.0, visible: true },
+      dialogos: { text: "Diálogos sonoros", x: 620, y: 780, scale: 1.0, visible: true },
+      vibracion: { text: "Vibración", x: 620, y: 814, scale: 1.0, visible: true },
+      precision: { text: "Precisión rigurosa", x: 620, y: 846, scale: 1.0, visible: true },
+      rigor: { text: "Rigor que se electrifica", x: 620, y: 878, scale: 1.0, visible: true },
+      misc_symbol: { text: "•", x: 50, y: 50, scale: 1.0, visible: true },
+      misc_badge: { text: "SONOS // 2026", x: 65, y: 54, scale: 1.0, visible: true },
+      misc_lines: { text: "Líneas de Registro", x: 0, y: 0, scale: 1.0, visible: true }
+    },
+    poster_capsules: {
+      sonos: { text: "SONOS", x: 60, y: 280, scale: 1.0, visible: true },
+      festival: { text: "festival de música electroacústica", x: 60, y: 70, scale: 1.0, visible: true },
+      dialogos: { text: "DIÁLOGOS SONOROS", x: 940, y: 70, scale: 1.0, visible: true },
+      vibracion: { text: "VIBRACIÓN", x: 380, y: 280, scale: 1.0, visible: true },
+      precision: { text: "PRECISIÓN RIGUROSA", x: 60, y: 440, scale: 1.0, visible: true },
+      rigor: { text: "RIGOR QUE SE ELECTRIFICA", x: 60, y: 940, scale: 1.0, visible: true },
+      misc_symbol: { text: "✱", x: 60, y: 70, scale: 1.0, visible: true },
+      misc_badge: { text: "2026 // SONOS", x: 940, y: 940, scale: 1.0, visible: true },
+      misc_lines: { text: "Marco Perimetral", x: 0, y: 0, scale: 1.0, visible: true }
+    },
+    deconstructed: {
+      sonos: { text: "S   O   N   O   S", x: 60, y: 90, scale: 1.0, visible: true },
+      festival: { text: "F E S T I V A L     E L E C T R O A C Ú S T I C O", x: 60, y: 170, scale: 1.0, visible: true },
+      dialogos: { text: "D I Á L O G O S     S O N O R O S", x: 60, y: 270, scale: 1.0, visible: true },
+      vibracion: { text: "V   I   B   R   A   C   I   Ó   N", x: 60, y: 470, scale: 1.0, visible: true },
+      precision: { text: "P R E C I S I Ó N     R I G U R O S A", x: 60, y: 720, scale: 1.0, visible: true },
+      rigor: { text: "R I G O R     Q U E     S E     E L E C T R I F I C A", x: 60, y: 860, scale: 1.0, visible: true },
+      misc_symbol: { text: "✱", x: 60, y: 90, scale: 1.0, visible: true },
+      misc_badge: { text: "2026 // HARMONIC", x: 940, y: 90, scale: 1.0, visible: true },
+      misc_lines: { text: "Eje Estructural", x: 0, y: 0, scale: 1.0, visible: true }
+    }
+  };
   const state = {
-    pattern: 'chladni',
-    shapes: ['circle'],
+    pattern: 'spectralHorizon',
+    shapes: ['target', 'glow', 'ring'],
     seed: Math.floor(Math.random() * 1e9),
     W: 1000,
     H: 1000,
     locks: { pattern: false, shapes: false, morph: false, wave: false, grid: false, style: false, seed: false },
     customFontBase64: null,
-    customFontName: null
+    customFontName: null,
+    words: JSON.parse(JSON.stringify(defaultWordLayouts.poster_target))
   };
 
   let historyStack = [];
@@ -460,6 +602,7 @@
       locks: {...state.locks},
       customFontBase64: state.customFontBase64,
       customFontName: state.customFontName,
+      words: JSON.parse(JSON.stringify(state.words)),
       ui: {}
     };
     document.querySelectorAll('input:not([type="button"]):not([type="file"]), select').forEach(el => {
@@ -520,9 +663,10 @@
     state.pattern = s.pattern;
     state.shapes = [...s.shapes];
     state.seed = s.seed;
-    state.locks = {...s.locks};
+    state.locks = {...state.locks};
     state.customFontBase64 = s.customFontBase64;
     state.customFontName = s.customFontName;
+    if (s.words) state.words = JSON.parse(JSON.stringify(s.words));
     
     Object.keys(s.ui).forEach(id => {
       const el = document.getElementById(id);
@@ -538,11 +682,11 @@
     document.querySelectorAll('.lock-btn').forEach(btn => {
        const key = btn.dataset.lock;
        btn.classList.toggle('locked', state.locks[key]);
-       btn.innerText = state.locks[key] ? '🔒' : '🔓';
+       btn.innerText = state.locks[key] ? 'BLOQ' : 'LIB';
     });
     const seedBtn = document.getElementById('btnLockSeed');
     seedBtn.classList.toggle('locked', state.locks.seed);
-    seedBtn.innerText = state.locks.seed ? '🔒 Posición' : '🔓 Posición';
+    seedBtn.innerText = state.locks.seed ? 'Posición [BLOQ]' : 'Posición [LIB]';
 
     document.getElementById('wrapColB').style.display = (s.ui.paramPalMode === '2' || s.ui.paramPalMode === '3') ? 'flex' : 'none';
     document.getElementById('wrapColC').style.display = s.ui.paramPalMode === '3' ? 'flex' : 'none';
@@ -577,8 +721,14 @@
 
   function loadSavedCustomPresets() {
     const grid = document.getElementById('savedPresetsList');
+    if (!grid) return;
     grid.innerHTML = '';
-    const saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
+    let saved = {};
+    try {
+      saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
+    } catch(e) {
+      console.warn('localStorage inaccesible:', e);
+    }
     Object.keys(saved).forEach(name => {
       const btn = document.createElement('div');
       btn.className = 'saved-preset-btn';
@@ -594,8 +744,12 @@
       del.title = 'Eliminar';
       del.onclick = (e) => {
         e.stopPropagation();
-        delete saved[name];
-        localStorage.setItem('nodal_presets', JSON.stringify(saved));
+        try {
+          delete saved[name];
+          localStorage.setItem('nodal_presets', JSON.stringify(saved));
+        } catch(err) {
+          console.warn('localStorage error:', err);
+        }
         loadSavedCustomPresets();
       };
       
@@ -608,9 +762,14 @@
   document.getElementById('btnSavePreset').addEventListener('click', () => {
     const name = document.getElementById('newPresetName').value.trim();
     if (!name) return alert('Escribe un nombre para el preset');
-    const saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
-    saved[name] = captureState();
-    localStorage.setItem('nodal_presets', JSON.stringify(saved));
+    let saved = {};
+    try {
+      saved = JSON.parse(localStorage.getItem('nodal_presets') || '{}');
+      saved[name] = captureState();
+      localStorage.setItem('nodal_presets', JSON.stringify(saved));
+    } catch(e) {
+      console.warn('localStorage error:', e);
+    }
     document.getElementById('newPresetName').value = '';
     loadSavedCustomPresets();
   });
@@ -663,20 +822,32 @@
   }
 
   const setVal = (id, valId, val) => {
-    document.getElementById(id).value = val;
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
     if (valId) {
+      const vel = document.getElementById(valId);
+      if (!vel) return;
       let dispVal = Number(val);
-      if (document.getElementById(id).step.includes('.')) dispVal = dispVal.toFixed(2);
-      document.getElementById(valId).innerText = dispVal;
+      if (el.step && typeof el.step === 'string' && el.step.includes('.')) {
+        dispVal = isNaN(dispVal) ? val : dispVal.toFixed(2);
+      }
+      vel.innerText = dispVal;
     }
   };
 
   const bindSlider = (id, valId) => {
-    document.getElementById(id).addEventListener('input', e => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', e => {
       let val = parseFloat(e.target.value);
-      if (e.target.step.includes('.')) val = val.toFixed(2);
-      else val = val.toString();
-      document.getElementById(valId).innerText = val;
+      if (e.target.step && typeof e.target.step === 'string' && e.target.step.includes('.')) {
+        val = val.toFixed(2);
+      } else {
+        val = val.toString();
+      }
+      const vel = document.getElementById(valId);
+      if (vel) vel.innerText = val;
       renderDebounced(); 
     });
     document.getElementById(id).addEventListener('change', recordHistory);
@@ -701,7 +872,7 @@
   document.getElementById('btnLockSeed').addEventListener('click', e => {
       state.locks.seed = !state.locks.seed;
       e.target.classList.toggle('locked', state.locks.seed);
-      e.target.innerText = state.locks.seed ? '🔒 Posición' : '🔓 Posición';
+      e.target.innerText = state.locks.seed ? 'Posición' : 'Posición';
       recordHistory();
   });
 
@@ -801,134 +972,398 @@
 
   function applyStudioPreset(type) {
     if (!state.locks.seed) state.seed = Math.floor(Math.random() * 1e9);
-    
-    // HARD RESET
-    document.getElementById('paramBlend').value = 'normal';
-    document.getElementById('paramTrans').checked = false;
-    document.getElementById('warpTargetFg').checked = true;
-    document.getElementById('warpTargetBg').checked = true;
-    document.getElementById('paramGridLines').checked = false;
-    setVal('paramAngle', 'valAngle', '0');
-    setVal('paramGooey', 'valGooey', '0');
-    setVal('warpX', 'valWarpX', '0.0'); 
-    setVal('warpY', 'valWarpY', '0.0');
-    setVal('paramBlur', 'valBlur', '0.0');
-    document.getElementById('paramFillType').value = 'solid';
-    
-    if (type === 'chladni_pure') {
-      state.pattern = 'chladni'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '7.0');
-      document.getElementById('paramDen').value = 10000; document.getElementById('valDen').innerText = 10000;
-      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '2.5');
-      setVal('paramThresh', 'valThresh', '0.05'); setVal('paramNoise', 'valNoise', '0.00'); 
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '1';
-      document.getElementById('colA').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2';
-      document.getElementById('waveEnabled').checked = false; document.getElementById('drawForeground').checked = true;
+
+    const aliasMap = {
+      'swiss': 'op_moire',
+      'pastel': 'riley_flux',
+      'neon': 'spectro_fm',
+      'spectro': 'spectro_fm',
+      'typo': 'mandala_polar',
+      'mandala': 'mandala_polar',
+      'gooey': 'ferrofluid',
+      'data': 'matriz_nodal',
+      'sand': 'chladni_pure',
+      'cellular': 'ferrofluid',
+      'strings': 'horizonte_sonos',
+      'intervals_fest': 'sonos_acid',
+      'tokyo_targets': 'sonos_targets',
+      'cymatic_matrix': 'matriz_nodal',
+      'typo_cloud': 'nube_sonos',
+      'sleepwalker': 'capsulas_sonos',
+      'spectral_horizon': 'horizonte_sonos'
+    };
+    if (aliasMap[type]) type = aliasMap[type];
+
+    if (!state.locks.style) {
+      document.getElementById('paramBlend').value = 'normal';
+      document.getElementById('paramTrans').checked = false;
+      setVal('paramBlur', 'valBlur', '0.0');
+      setVal('paramGooey', 'valGooey', '0');
+      document.getElementById('paramFillType').value = 'solid';
     }
-    else if (type === 'gooey') {
-      state.pattern = 'dataScatter'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '4.0'); 
-      document.getElementById('paramDen').value = 800; document.getElementById('valDen').innerText = 800;
-      setVal('paramMinS', 'valMinS', '10.0'); setVal('paramMaxS', 'valMaxS', '60.0');
-      setVal('paramThresh', 'valThresh', '0.60'); setVal('paramNoise', 'valNoise', '0.25');
-      setVal('paramGooey', 'valGooey', '20'); 
-      document.getElementById('paramGridN').value = '4'; document.getElementById('paramGridLines').checked = true;
-      document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#ff0055'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#111111'; document.getElementById('colBg').value = '#e2e2e2'; 
-      document.getElementById('waveEnabled').checked = false; 
+    if (!state.locks.grid) {
+      document.getElementById('warpTargetFg').checked = true;
+      document.getElementById('warpTargetBg').checked = true;
+      document.getElementById('paramGridLines').checked = false;
+      setVal('warpX', 'valWarpX', '0.0'); 
+      setVal('warpY', 'valWarpY', '0.0');
+      document.getElementById('paramGridN').value = '1';
+    }
+    if (!state.locks.shapes) {
+      setVal('paramAngle', 'valAngle', '0');
+    }
+
+    // Resetear posiciones a la plantilla por defecto correspondiente
+    const setPresetLayout = (layoutKey) => {
+      document.getElementById('posterLayoutEnabled').checked = true;
+      document.getElementById('posterLayoutStyle').value = layoutKey;
+      if (!state.locks.style && defaultWordLayouts[layoutKey]) {
+        state.words = JSON.parse(JSON.stringify(defaultWordLayouts[layoutKey]));
+        syncWordSlidersToSelected();
+      }
+    };
+
+    // 1. DIANAS SONORAS (TOKYO TARGETS)
+    if (type === 'sonos_targets') {
+      if (!state.locks.pattern) state.pattern = 'spectralHorizon';
+      if (!state.locks.shapes) state.shapes = ['target', 'glow', 'ring'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '8.0');
+        document.getElementById('paramDen').value = 85; document.getElementById('valDen').innerText = '85';
+        setVal('paramMinS', 'valMinS', '28.0'); setVal('paramMaxS', 'valMaxS', '85.0');
+        setVal('paramThresh', 'valThresh', '0.85'); setVal('paramNoise', 'valNoise', '0.00');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = false;
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '3';
+        document.getElementById('colA').value = '#e60000';
+        document.getElementById('colB').value = '#0066ff';
+        document.getElementById('colC').value = '#ff66cc';
+        document.getElementById('colBg').value = '#f2f1ed';
+      }
+      setPresetLayout('poster_target');
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'data') {
-      state.pattern = 'dataMatrix'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '10.0'); 
-      document.getElementById('paramDen').value = 2000; document.getElementById('valDen').innerText = 2000;
-      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '10.0');
-      setVal('paramThresh', 'valThresh', '0.65'); setVal('paramNoise', 'valNoise', '0.20');
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#2C3E50'; document.getElementById('colB').value = '#3E4A3D'; document.getElementById('colC').value = '#8B3A33'; document.getElementById('colBg').value = '#EBE5DA'; 
-      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'chladni_sand'; document.getElementById('waveSyncColor').checked = false; document.getElementById('waveColor').value = '#2C3E50';
-      setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '1.0'); setVal('waveFreq', 'valWaveFreq', '6.0');
+    // 2. SONOS ÁCIDO (CONSTELACIÓN FLUIDA)
+    else if (type === 'sonos_acid') {
+      if (!state.locks.pattern) state.pattern = 'concentricWaves';
+      if (!state.locks.shapes) state.shapes = ['circle', 'glow'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '3.5'); setVal('paramM', 'valM', '6.0');
+        document.getElementById('paramDen').value = 380; document.getElementById('valDen').innerText = '380';
+        setVal('paramMinS', 'valMinS', '10.0'); setVal('paramMaxS', 'valMaxS', '30.0');
+        setVal('paramThresh', 'valThresh', '0.45'); setVal('paramNoise', 'valNoise', '0.08');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'sine';
+        document.getElementById('waveSyncColor').checked = false;
+        document.getElementById('waveColor').value = '#c8ea00';
+        setVal('waveRows', 'valWaveRows', '18'); setVal('waveAmp', 'valWaveAmp', '0.8'); setVal('waveFreq', 'valWaveFreq', '2.5');
+        setVal('waveBlur', 'valWaveBlur', '4.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '2';
+        document.getElementById('colA').value = '#ffffff';
+        document.getElementById('colB').value = '#fff533';
+        document.getElementById('colBg').value = '#dfff00';
+      }
+      setPresetLayout('intervals');
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'typo') {
-      state.pattern = 'chladniRadial'; state.shapes = ['text'];
-      document.getElementById('customText').value = "NODAL";
-      setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '7.0'); 
-      document.getElementById('paramDen').value = 1500; document.getElementById('valDen').innerText = 1500;
-      setVal('paramMinS', 'valMinS', '4.0'); setVal('paramMaxS', 'valMaxS', '18.0');
-      setVal('paramThresh', 'valThresh', '0.65'); setVal('paramNoise', 'valNoise', '0.80');
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '2';
-      document.getElementById('colA').value = '#ff8c00'; document.getElementById('colB').value = '#ffb300'; document.getElementById('colBg').value = '#161412'; 
-      document.getElementById('waveEnabled').checked = false;
+    // 3. MATRIZ NODAL (CYMATIC TAPESTRY)
+    else if (type === 'matriz_nodal') {
+      if (!state.locks.pattern) state.pattern = 'cymaticMatrix';
+      if (!state.locks.shapes) state.shapes = ['target', 'ring', 'circle'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '9.0');
+        document.getElementById('paramDen').value = 6500; document.getElementById('valDen').innerText = '6500';
+        setVal('paramMinS', 'valMinS', '2.0'); setVal('paramMaxS', 'valMaxS', '16.0');
+        setVal('paramThresh', 'valThresh', '0.75'); setVal('paramNoise', 'valNoise', '0.00');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'pixel_grid';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#111111';
+        setVal('waveRows', 'valWaveRows', '42'); setVal('waveAmp', 'valWaveAmp', '1.2'); setVal('waveFreq', 'valWaveFreq', '4.0');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '3';
+        document.getElementById('colA').value = '#e63946';
+        document.getElementById('colB').value = '#1d3557';
+        document.getElementById('colC').value = '#e9c46a';
+        document.getElementById('colBg').value = '#ede4d8';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'pastel') {
-      state.pattern = 'matrixWarp'; state.shapes = ['line', 'triangle'];
-      setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '3.0'); 
-      document.getElementById('paramDen').value = 120; document.getElementById('valDen').innerText = 120;
-      setVal('paramMinS', 'valMinS', '40.0'); setVal('paramMaxS', 'valMaxS', '120.0');
-      setVal('paramThresh', 'valThresh', '0.80'); setVal('paramNoise', 'valNoise', '0.10');
-      document.getElementById('paramGridN').value = '24'; document.getElementById('paramGridLines').checked = true;
-      document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#8ce5b0'; document.getElementById('colB').value = '#ba8cff'; document.getElementById('colC').value = '#ff9999'; document.getElementById('colBg').value = '#2a2524'; 
-      document.getElementById('waveEnabled').checked = false;
-      document.getElementById('paramFillType').value = 'stripesV';
-      setVal('paramTexDen', 'valTexDen', '6.0');
-      document.getElementById('drawForeground').checked = true;
-      setVal('warpX', 'valWarpX', '0.15'); setVal('warpY', 'valWarpY', '0.15');
-    }
-    else if (type === 'swiss') {
-      state.pattern = 'dataMatrix'; state.shapes = ['hash', 'circle', 'line'];
-      setVal('paramN', 'valN', '10.0'); setVal('paramM', 'valM', '15.0'); 
-      document.getElementById('paramDen').value = 4000; document.getElementById('valDen').innerText = 4000;
-      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '15.0'); 
-      setVal('paramThresh', 'valThresh', '0.70'); setVal('paramNoise', 'valNoise', '0.0');
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '2';
-      document.getElementById('colA').value = '#000000'; document.getElementById('colB').value = '#222222'; document.getElementById('colBg').value = '#ffffff'; 
-      document.getElementById('waveEnabled').checked = false;
+    // 4. NUBE SONORA (TYPO HALFTONE)
+    else if (type === 'nube_sonos') {
+      if (!state.locks.pattern) state.pattern = 'chladni';
+      if (!state.locks.shapes) state.shapes = ['text'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '5.0');
+        document.getElementById('paramDen').value = 4500; document.getElementById('valDen').innerText = '4500';
+        setVal('paramMinS', 'valMinS', '5.0'); setVal('paramMaxS', 'valMaxS', '14.0');
+        setVal('paramThresh', 'valThresh', '0.40'); setVal('paramNoise', 'valNoise', '0.20');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = false;
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '1';
+        document.getElementById('colA').value = '#111111';
+        document.getElementById('colBg').value = '#e8e8e8';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'neon') {
-      state.pattern = 'sequencer'; state.shapes = ['line'];
-      setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '4.0'); 
-      document.getElementById('paramDen').value = 400; document.getElementById('valDen').innerText = 400;
-      setVal('paramMinS', 'valMinS', '20.0'); setVal('paramMaxS', 'valMaxS', '100.0');
-      setVal('paramThresh', 'valThresh', '0.80'); setVal('paramNoise', 'valNoise', '0.0');
-      setVal('paramAngle', 'valAngle', '90'); 
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '1';
-      document.getElementById('colA').value = '#4dff5b'; document.getElementById('colBg').value = '#222222'; 
-      document.getElementById('waveEnabled').checked = false;
+    // 5. CÁPSULAS DE RIGOR (AUDIO CAPSULES & HALO)
+    else if (type === 'capsulas_sonos') {
+      if (!state.locks.pattern) state.pattern = 'spectralHorizon';
+      if (!state.locks.shapes) state.shapes = ['pill', 'glow'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '8.0');
+        document.getElementById('paramDen').value = 140; document.getElementById('valDen').innerText = '140';
+        setVal('paramMinS', 'valMinS', '16.0'); setVal('paramMaxS', 'valMaxS', '48.0');
+        setVal('paramThresh', 'valThresh', '0.70'); setVal('paramNoise', 'valNoise', '0.00');
+        setVal('paramAngle', 'valAngle', '0');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'sine';
+        document.getElementById('waveSyncColor').checked = false;
+        document.getElementById('waveColor').value = '#ff0055';
+        setVal('waveRows', 'valWaveRows', '14'); setVal('waveAmp', 'valWaveAmp', '0.4'); setVal('waveFreq', 'valWaveFreq', '1.0');
+        setVal('waveBlur', 'valWaveBlur', '12.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '3';
+        document.getElementById('colA').value = '#ff0033';
+        document.getElementById('colB').value = '#ff0099';
+        document.getElementById('colC').value = '#00e5ff';
+        document.getElementById('colBg').value = '#faf7f0';
+      }
+      setPresetLayout('poster_capsules');
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'cellular') {
-      state.pattern = 'dataMatrix'; state.shapes = ['rect', 'circle'];
-      setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '12.0'); 
-      document.getElementById('paramDen').value = 4500; document.getElementById('valDen').innerText = 4500;
-      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '20.0');
-      setVal('paramThresh', 'valThresh', '0.70'); setVal('paramNoise', 'valNoise', '0.25');
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramBlend').value = 'difference';
-      document.getElementById('paramPalMode').value = '3';
-      document.getElementById('colA').value = '#000000'; document.getElementById('colB').value = '#caff14'; document.getElementById('colC').value = '#ff00a2'; document.getElementById('colBg').value = '#e5e5e5'; 
-      document.getElementById('waveEnabled').checked = true; document.getElementById('waveStyle').value = 'pixel_grid'; document.getElementById('waveSyncColor').checked = true; document.getElementById('waveColor').value = '#000000';
-      setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '1.0'); setVal('waveFreq', 'valWaveFreq', '2.0');
+    // 6. HORIZONTE ELECTROACÚSTICO (AUDIO TIMELINE)
+    else if (type === 'horizonte_sonos') {
+      if (!state.locks.pattern) state.pattern = 'spectralHorizon';
+      if (!state.locks.shapes) state.shapes = ['rect', 'pill', 'line'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '12.0');
+        document.getElementById('paramDen').value = 220; document.getElementById('valDen').innerText = '220';
+        setVal('paramMinS', 'valMinS', '8.0'); setVal('paramMaxS', 'valMaxS', '55.0');
+        setVal('paramThresh', 'valThresh', '0.65'); setVal('paramNoise', 'valNoise', '0.00');
+        setVal('paramAngle', 'valAngle', '90');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = false;
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '3';
+        document.getElementById('colA').value = '#ff3b00';
+        document.getElementById('colB').value = '#111111';
+        document.getElementById('colC').value = '#6e706a';
+        document.getElementById('colBg').value = '#80827b';
+      }
+      setPresetLayout('deconstructed');
       document.getElementById('drawForeground').checked = true;
     }
-    else if (type === 'sand') {
-      state.pattern = 'chladni'; state.shapes = ['circle'];
-      setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '4.0');
-      document.getElementById('paramDen').value = 8000; document.getElementById('valDen').innerText = 8000;
-      setVal('paramMinS', 'valMinS', '0.5'); setVal('paramMaxS', 'valMaxS', '2.5');
-      setVal('paramThresh', 'valThresh', '0.08'); setVal('paramNoise', 'valNoise', '0.10');
-      document.getElementById('paramGridN').value = '1'; 
-      document.getElementById('paramPalMode').value = '2';
-      document.getElementById('colA').value = '#ffffff'; document.getElementById('colB').value = '#f0db6e'; document.getElementById('colBg').value = '#111111';
-      document.getElementById('waveEnabled').checked = false; document.getElementById('drawForeground').checked = true;
+    // 7. CHLADNI 432HZ CLÁSICO
+    else if (type === 'chladni_pure') {
+      if (!state.locks.pattern) state.pattern = 'chladni';
+      if (!state.locks.shapes) state.shapes = ['circle'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '4.0'); setVal('paramM', 'valM', '7.0');
+        document.getElementById('paramDen').value = 14000; document.getElementById('valDen').innerText = '14000';
+        setVal('paramMinS', 'valMinS', '0.4'); setVal('paramMaxS', 'valMaxS', '2.2');
+        setVal('paramThresh', 'valThresh', '0.04'); setVal('paramNoise', 'valNoise', '0.02');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'chladni_sand';
+        document.getElementById('waveSyncColor').checked = false;
+        document.getElementById('waveColor').value = '#1c1c1c';
+        setVal('waveRows', 'valWaveRows', '40'); setVal('waveAmp', 'valWaveAmp', '0.8'); setVal('waveFreq', 'valWaveFreq', '4.0');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramPalMode').value = '2';
+        document.getElementById('colA').value = '#ffffff';
+        document.getElementById('colB').value = '#f2e6b6';
+        document.getElementById('colBg').value = '#080808';
+      }
+      setPresetLayout('swiss_header');
+      document.getElementById('drawForeground').checked = true;
+    }
+    // 8. MOIRÉ ÓPTICO
+    else if (type === 'op_moire') {
+      if (!state.locks.pattern) state.pattern = 'matrixWarp';
+      if (!state.locks.shapes) state.shapes = ['line', 'hash'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '6.0');
+        document.getElementById('paramDen').value = 2400; document.getElementById('valDen').innerText = '2400';
+        setVal('paramMinS', 'valMinS', '12.0'); setVal('paramMaxS', 'valMaxS', '48.0');
+        setVal('paramThresh', 'valThresh', '0.72'); setVal('paramNoise', 'valNoise', '0.00');
+        setVal('paramAngle', 'valAngle', '45');
+      }
+      if (!state.locks.grid) {
+        document.getElementById('paramGridN').value = '4';
+        document.getElementById('paramGridLines').checked = true;
+        setVal('warpX', 'valWarpX', '0.08'); setVal('warpY', 'valWarpY', '0.08');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'tin_warp';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#ffffff';
+        setVal('waveRows', 'valWaveRows', '54'); setVal('waveAmp', 'valWaveAmp', '2.4'); setVal('waveFreq', 'valWaveFreq', '7.0');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramFillType').value = 'stripesV';
+        setVal('paramTexDen', 'valTexDen', '4.0');
+        document.getElementById('paramBlend').value = 'difference';
+        document.getElementById('paramPalMode').value = '1';
+        document.getElementById('colA').value = '#ffffff';
+        document.getElementById('colBg').value = '#000000';
+      }
+      setPresetLayout('swiss_header');
+      document.getElementById('drawForeground').checked = true;
+    }
+    // 9. RILEY FLUX
+    else if (type === 'riley_flux') {
+      if (!state.locks.pattern) state.pattern = 'concentricWaves';
+      if (!state.locks.shapes) state.shapes = ['line', 'triangle'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '5.0'); setVal('paramM', 'valM', '8.0');
+        document.getElementById('paramDen').value = 3200; document.getElementById('valDen').innerText = '3200';
+        setVal('paramMinS', 'valMinS', '4.0'); setVal('paramMaxS', 'valMaxS', '28.0');
+        setVal('paramThresh', 'valThresh', '0.75'); setVal('paramNoise', 'valNoise', '0.04');
+        setVal('paramAngle', 'valAngle', '90');
+      }
+      if (!state.locks.grid) {
+        setVal('warpX', 'valWarpX', '0.12'); setVal('warpY', 'valWarpY', '0.12');
+        document.getElementById('paramGridN').value = '1';
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'sine';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#0022ff';
+        setVal('waveRows', 'valWaveRows', '38'); setVal('waveAmp', 'valWaveAmp', '2.2'); setVal('waveFreq', 'valWaveFreq', '8.5');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramFillType').value = 'stripesV';
+        setVal('paramTexDen', 'valTexDen', '5.0');
+        document.getElementById('paramBlend').value = 'difference';
+        document.getElementById('paramPalMode').value = '2';
+        document.getElementById('colA').value = '#ff3300';
+        document.getElementById('colB').value = '#0022ff';
+        document.getElementById('colBg').value = '#f6f4ee';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    // 10. ESPECTRO FM
+    else if (type === 'spectro_fm') {
+      if (!state.locks.pattern) state.pattern = 'sequencer';
+      if (!state.locks.shapes) state.shapes = ['rect', 'line'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '8.0'); setVal('paramM', 'valM', '4.0');
+        document.getElementById('paramDen').value = 1600; document.getElementById('valDen').innerText = '1600';
+        setVal('paramMinS', 'valMinS', '6.0'); setVal('paramMaxS', 'valMaxS', '70.0');
+        setVal('paramThresh', 'valThresh', '0.75'); setVal('paramNoise', 'valNoise', '0.00');
+        setVal('paramAngle', 'valAngle', '90');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'pixel_grid';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#00ff66';
+        setVal('waveRows', 'valWaveRows', '32'); setVal('waveAmp', 'valWaveAmp', '1.6'); setVal('waveFreq', 'valWaveFreq', '4.5');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramFillType').value = 'spectrogram';
+        setVal('paramTexDen', 'valTexDen', '6.5');
+        document.getElementById('paramBlend').value = 'normal';
+        document.getElementById('paramPalMode').value = '3';
+        document.getElementById('colA').value = '#00ff66';
+        document.getElementById('colB').value = '#00f0ff';
+        document.getElementById('colC').value = '#ff0077';
+        document.getElementById('colBg').value = '#05070a';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    // 11. MANDALA POLAR
+    else if (type === 'mandala_polar') {
+      if (!state.locks.pattern) state.pattern = 'chladniRadial';
+      if (!state.locks.shapes) state.shapes = ['circle', 'triangle', 'target'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '6.0'); setVal('paramM', 'valM', '12.0');
+        document.getElementById('paramDen').value = 2600; document.getElementById('valDen').innerText = '2600';
+        setVal('paramMinS', 'valMinS', '2.0'); setVal('paramMaxS', 'valMaxS', '18.0');
+        setVal('paramThresh', 'valThresh', '0.45'); setVal('paramNoise', 'valNoise', '0.05');
+      }
+      if (!state.locks.grid) {
+        document.getElementById('paramGridN').value = '2';
+        document.getElementById('paramGridLines').checked = false;
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'concentric';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#ff3300';
+        setVal('waveRows', 'valWaveRows', '30'); setVal('waveAmp', 'valWaveAmp', '1.8'); setVal('waveFreq', 'valWaveFreq', '5.0');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        document.getElementById('paramBlend').value = 'normal';
+        document.getElementById('paramPalMode').value = '2';
+        document.getElementById('colA').value = '#ffcc00';
+        document.getElementById('colB').value = '#ff2a00';
+        document.getElementById('colBg').value = '#0a0705';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
+    }
+    // 12. FERROFLUIDO
+    else if (type === 'ferrofluid') {
+      if (!state.locks.pattern) state.pattern = 'chladni';
+      if (!state.locks.shapes) state.shapes = ['circle'];
+      if (!state.locks.morph) {
+        setVal('paramN', 'valN', '3.0'); setVal('paramM', 'valM', '5.0');
+        document.getElementById('paramDen').value = 950; document.getElementById('valDen').innerText = '950';
+        setVal('paramMinS', 'valMinS', '12.0'); setVal('paramMaxS', 'valMaxS', '55.0');
+        setVal('paramThresh', 'valThresh', '0.45'); setVal('paramNoise', 'valNoise', '0.15');
+      }
+      if (!state.locks.wave) {
+        document.getElementById('waveEnabled').checked = true;
+        document.getElementById('waveStyle').value = 'chladni_bg';
+        document.getElementById('waveSyncColor').checked = true;
+        document.getElementById('waveColor').value = '#caff14';
+        setVal('waveRows', 'valWaveRows', '34'); setVal('waveAmp', 'valWaveAmp', '1.4'); setVal('waveFreq', 'valWaveFreq', '3.5');
+        setVal('waveBlur', 'valWaveBlur', '0.0');
+      }
+      if (!state.locks.style) {
+        setVal('paramGooey', 'valGooey', '26');
+        document.getElementById('paramBlend').value = 'difference';
+        document.getElementById('paramPalMode').value = '2';
+        document.getElementById('colA').value = '#caff14';
+        document.getElementById('colB').value = '#ff0066';
+        document.getElementById('colBg').value = '#0d0d0d';
+      }
+      document.getElementById('posterLayoutEnabled').checked = false;
+      document.getElementById('drawForeground').checked = true;
     }
 
     document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
@@ -947,14 +1382,14 @@
     }
 
     if (!state.locks.pattern) {
-      const patterns = ['chladni', 'chladniRadial', 'matrixWarp', 'sequencer', 'dataScatter', 'ghostStrings', 'concentricWaves', 'dataMatrix'];
+      const patterns = ['spectralHorizon', 'cymaticMatrix', 'chladni', 'chladniRadial', 'matrixWarp', 'sequencer', 'concentricWaves', 'ghostStrings', 'dataMatrix', 'dataScatter'];
       state.pattern = patterns[Math.floor(Math.random() * patterns.length)];
       document.querySelectorAll('#patternToggles .toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.val === state.pattern));
       updateControlsState();
     }
 
     if (!state.locks.shapes) {
-      const shapes = ['circle', 'rect', 'triangle', 'line', 'hash', 'text'];
+      const shapes = ['circle', 'target', 'pill', 'ring', 'glow', 'rect', 'triangle', 'line', 'hash', 'text'];
       const numShapes = Math.floor(Math.random() * 3) + 1; 
       const shuffled = shapes.sort(() => 0.5 - Math.random());
       state.shapes = shuffled.slice(0, numShapes);
@@ -964,65 +1399,76 @@
     }
 
     if (!state.locks.morph) {
-      setVal('paramN', 'valN', (1 + Math.random() * 14).toFixed(1));
-      setVal('paramM', 'valM', (1 + Math.random() * 14).toFixed(1));
-      const den = Math.floor(150 + Math.random() * 5000);
+      setVal('paramN', 'valN', (2 + Math.random() * 12).toFixed(1));
+      setVal('paramM', 'valM', (2 + Math.random() * 12).toFixed(1));
+      const den = Math.floor(100 + Math.random() * 5500);
       document.getElementById('paramDen').value = den; document.getElementById('valDen').innerText = den;
-      setVal('paramMinS', 'valMinS', (Math.random() * 5).toFixed(1));
-      setVal('paramMaxS', 'valMaxS', (4 + Math.random() * 40).toFixed(1));
-      setVal('paramThresh', 'valThresh', (0.15 + Math.random() * 0.8).toFixed(2));
+      setVal('paramMinS', 'valMinS', (Math.random() * 6).toFixed(1));
+      setVal('paramMaxS', 'valMaxS', (8 + Math.random() * 50).toFixed(1));
+      setVal('paramThresh', 'valThresh', (0.15 + Math.random() * 0.7).toFixed(2));
       setVal('paramAngle', 'valAngle', ['0','45','90'][Math.floor(Math.random()*3)]);
     }
 
     if (!state.locks.wave) {
-      const wOn = Math.random() > 0.3;
+      const wOn = Math.random() > 0.35;
       document.getElementById('waveEnabled').checked = wOn;
       const styles = ['sine', 'tin_warp', 'pixel_grid', 'concentric', 'chladni_bg', 'chladni_sand'];
-      document.getElementById('waveStyle').value = styles[Math.floor(Math.random() * 6)];
+      document.getElementById('waveStyle').value = styles[Math.floor(Math.random() * styles.length)];
       document.getElementById('waveSyncColor').checked = Math.random() > 0.4;
-      setVal('waveAmp', 'valWaveAmp', (0.5 + Math.random()*4).toFixed(2));
-      setVal('waveFreq', 'valWaveFreq', (0.5 + Math.random()*15).toFixed(1));
-      const wr = Math.floor(6 + Math.random()*60);
+      setVal('waveAmp', 'valWaveAmp', (0.5 + Math.random()*3.5).toFixed(1));
+      setVal('waveFreq', 'valWaveFreq', (1.0 + Math.random()*14).toFixed(1));
+      const wr = Math.floor(12 + Math.random()*50);
       document.getElementById('waveRows').value = wr; document.getElementById('valWaveRows').innerText = wr;
-      setVal('waveBlur', 'valWaveBlur', Math.random() > 0.6 ? (Math.random() * 15).toFixed(1) : 0);
+      setVal('waveBlur', 'valWaveBlur', Math.random() > 0.65 ? (Math.random() * 10).toFixed(1) : 0);
       updateControlsState();
     }
 
     if (!state.locks.grid) {
-      const grids = [1, 2, 4, 6, 12, 24];
+      const grids = [1, 2, 4, 6, 12];
       document.getElementById('paramGridN').value = grids[Math.floor(Math.random() * grids.length)];
-      setVal('warpX', 'valWarpX', (Math.random() * 0.2).toFixed(2));
-      setVal('warpY', 'valWarpY', (Math.random() * 0.2).toFixed(2));
+      setVal('warpX', 'valWarpX', Math.random() > 0.5 ? (Math.random() * 0.18).toFixed(2) : 0);
+      setVal('warpY', 'valWarpY', Math.random() > 0.5 ? (Math.random() * 0.18).toFixed(2) : 0);
       document.getElementById('paramGridLines').checked = Math.random() > 0.6;
     }
 
     if (!state.locks.style) {
       const fills = ['solid', 'stripesV', 'stripesH', 'dots', 'spectrogram'];
-      document.getElementById('paramFillType').value = fills[Math.floor(Math.random() * 5)];
-      setVal('paramTexDen', 'valTexDen', (2 + Math.random() * 15).toFixed(1));
+      document.getElementById('paramFillType').value = fills[Math.floor(Math.random() * fills.length)];
+      setVal('paramTexDen', 'valTexDen', (2.5 + Math.random() * 10).toFixed(1));
       
       const blends = ['normal', 'difference', 'multiply'];
-      document.getElementById('paramBlend').value = blends[Math.floor(Math.random() * 3)];
+      document.getElementById('paramBlend').value = blends[Math.floor(Math.random() * blends.length)];
       
-      setVal('paramBlur', 'valBlur', Math.random() > 0.7 ? (Math.random() * 8).toFixed(1) : 0);
-      setVal('paramGooey', 'valGooey', Math.random() > 0.8 ? (Math.random() * 20).toFixed(0) : 0);
-      setVal('paramNoise', 'valNoise', (Math.random() * 1.0).toFixed(2));
+      setVal('paramBlur', 'valBlur', Math.random() > 0.8 ? (Math.random() * 5).toFixed(1) : 0);
+      setVal('paramGooey', 'valGooey', Math.random() > 0.85 ? Math.floor(15 + Math.random() * 25) : 0);
+      setVal('paramNoise', 'valNoise', (Math.random() * 0.4).toFixed(2));
       
-      const baseHue = Math.floor(Math.random() * 360);
-      document.getElementById('colA').value = hslToHex(baseHue, 60 + Math.random() * 40, 40 + Math.random() * 40);
-      document.getElementById('colB').value = hslToHex((baseHue + 60 + Math.random() * 240) % 360, 60 + Math.random() * 40, 50 + Math.random() * 30);
-      document.getElementById('colC').value = hslToHex((baseHue + 120 + Math.random() * 180) % 360, 50 + Math.random() * 50, 50 + Math.random() * 30);
-      
-      const isDark = Math.random() > 0.4;
-      const bgL = isDark ? (5 + Math.random()*10) : (85 + Math.random()*10);
-      document.getElementById('colBg').value = hslToHex(baseHue, 10 + Math.random() * 20, bgL);
-      document.getElementById('waveColor').value = hslToHex((baseHue + 180)%360, 50, isDark ? 80 : 20);
-      
-      const modes = ['1', '2', '3'];
-      const selMode = modes[Math.floor(Math.random() * 3)];
-      document.getElementById('paramPalMode').value = selMode;
-      document.getElementById('wrapColB').style.display = (selMode === '2' || selMode === '3') ? 'flex' : 'none';
-      document.getElementById('wrapColC').style.display = selMode === '3' ? 'flex' : 'none';
+      const palettes = [
+        { a: '#ff2200', b: '#0022ff', c: '#ffcc00', bg: '#f4f3ef', mode: '3' },
+        { a: '#ffffff', b: '#fff533', c: '#080808', bg: '#dfff00', mode: '2' },
+        { a: '#ffffff', b: '#ffffff', c: '#ffffff', bg: '#000000', mode: '1' },
+        { a: '#ff0055', b: '#00e5ff', c: '#ffffff', bg: '#0a0a0a', mode: '3' },
+        { a: '#ff3b00', b: '#111111', c: '#777777', bg: '#80827b', mode: '3' },
+        { a: '#caff14', b: '#ff0066', c: '#00ffff', bg: '#0d0d0d', mode: '2' },
+        { a: '#e60000', b: '#0066ff', c: '#ff66cc', bg: '#f2f1ed', mode: '3' }
+      ];
+      const p = palettes[Math.floor(Math.random() * palettes.length)];
+      document.getElementById('colA').value = p.a;
+      document.getElementById('colB').value = p.b;
+      document.getElementById('colC').value = p.c;
+      document.getElementById('colBg').value = p.bg;
+      document.getElementById('paramPalMode').value = p.mode;
+      document.getElementById('wrapColB').style.display = (p.mode === '2' || p.mode === '3') ? 'flex' : 'none';
+      document.getElementById('wrapColC').style.display = p.mode === '3' ? 'flex' : 'none';
+
+      const posterTemplates = ['none', 'swiss_header', 'intervals', 'poster_target', 'poster_capsules', 'deconstructed'];
+      const chosenTpl = posterTemplates[Math.floor(Math.random() * posterTemplates.length)];
+      document.getElementById('posterLayoutStyle').value = chosenTpl;
+      document.getElementById('posterLayoutEnabled').checked = Math.random() > 0.2;
+      if (defaultWordLayouts[chosenTpl]) {
+        state.words = JSON.parse(JSON.stringify(defaultWordLayouts[chosenTpl]));
+        syncWordSlidersToSelected();
+      }
     }
 
     render();
@@ -1051,12 +1497,70 @@
     const strokeW = Math.max(0.5, size * 0.15);
     let fillAttr = fillType === 'solid' ? color : `url(#${fillType}_${color.replace('#','')})`;
     
+    const palMode = document.getElementById('paramPalMode').value;
+    const cA = document.getElementById('colA').value;
+    const cB = document.getElementById('colB').value;
+    const cC = document.getElementById('colC').value;
+
     if (type === 'circle') {
       if (seed > 0.8 && fillType === 'solid') {
         return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size/2).toFixed(1)}" fill="none" stroke="${color}" stroke-width="${strokeW.toFixed(1)}" />`;
       }
       return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(size/2).toFixed(1)}" fill="${fillAttr}" />`;
     } 
+    else if (type === 'target') {
+      const r = size / 2;
+      const c2 = resolveColor((seed + 0.33) % 1, palMode, cA, cB, cC);
+      const c3 = resolveColor((seed + 0.66) % 1, palMode, cA, cB, cC);
+      let out = `<g transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`;
+      if (seed > 0.45) {
+        out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 1.35).toFixed(1)}" fill="none" stroke="${c2}" stroke-width="${Math.max(0.6, r * 0.12).toFixed(1)}" stroke-dasharray="${seed > 0.8 ? '3,3' : 'none'}" />`;
+      }
+      out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${color}" />`;
+      out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.62).toFixed(1)}" fill="${c2}" />`;
+      out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.28).toFixed(1)}" fill="${c3}" />`;
+      out += `</g>`;
+      return out;
+    }
+    else if (type === 'pill') {
+      const w = size * (1.8 + seed * 2.2);
+      const h = Math.max(5, size * 0.65);
+      const rx = h / 2;
+      const c2 = resolveColor((seed + 0.5) % 1, palMode, cA, cB, cC);
+      let out = `<g transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`;
+      if (seed > 0.3) {
+        out += `<rect x="${(x - w/2 - 4).toFixed(1)}" y="${(y - h/2 - 4).toFixed(1)}" width="${(w + 8).toFixed(1)}" height="${(h + 8).toFixed(1)}" rx="${(rx + 4).toFixed(1)}" fill="${c2}" opacity="0.45" filter="url(#pillGlow)" />`;
+      }
+      out += `<rect x="${(x - w/2).toFixed(1)}" y="${(y - h/2).toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}" rx="${rx.toFixed(1)}" fill="${color}" />`;
+      if (seed > 0.6 && w > 28) {
+        out += `<circle cx="${(x - w/2 + rx).toFixed(1)}" cy="${y.toFixed(1)}" r="${(rx * 0.4).toFixed(1)}" fill="${c2}" />`;
+      }
+      out += `</g>`;
+      return out;
+    }
+    else if (type === 'ring') {
+      const r = size / 2;
+      const sw = Math.max(1, r * 0.22);
+      let out = `<g transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">`;
+      out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="none" stroke="${color}" stroke-width="${sw.toFixed(1)}" />`;
+      if (seed > 0.35) {
+        out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.52).toFixed(1)}" fill="none" stroke="${color}" stroke-width="${(sw * 0.8).toFixed(1)}" />`;
+      }
+      if (seed > 0.65) {
+        out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.22).toFixed(1)}" fill="${color}" />`;
+      }
+      out += `</g>`;
+      return out;
+    }
+    else if (type === 'glow') {
+      const r = size / 2;
+      const c2 = resolveColor((seed + 0.5) % 1, palMode, cA, cB, cC);
+      return `<g transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 1.6).toFixed(1)}" fill="${c2}" opacity="0.5" filter="url(#sprayGlow)" />
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(1)}" fill="${color}" />
+        <circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(r * 0.35).toFixed(1)}" fill="#ffffff" opacity="0.8" />
+      </g>`;
+    }
     else if (type === 'rect') {
       const half = size/2;
       return `<rect x="${(x-half).toFixed(1)}" y="${(y-half).toFixed(1)}" width="${size.toFixed(1)}" height="${size.toFixed(1)}" fill="${fillAttr}" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
@@ -1082,14 +1586,15 @@
          path += `M ${(x-half).toFixed(1)} ${(y+oy).toFixed(1)} L ${(x+half).toFixed(1)} ${(y+oy).toFixed(1)} `;
       }
       return `<path d="${path}" stroke="${color}" stroke-width="${(strokeW*0.6).toFixed(1)}" stroke-linecap="round" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})" />`;
-    }
+    } 
     else if (type === 'text') {
-      const char = txtSource.charAt(Math.floor(seed * txtSource.length)) || 'A';
-      return `<text x="${x.toFixed(1)}" y="${(y + size*0.35).toFixed(1)}" font-family="${fontFamily.replace(/"/g, "'")}" font-weight="700" font-size="${(size*1.2).toFixed(1)}" fill="${fillAttr}" text-anchor="middle" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">${char}</text>`;
+      let words = (txtSource || 'SONOS').split(' ');
+      let word = words[Math.floor(seed * words.length)] || 'SONOS';
+      word = word.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      return `<text x="${x.toFixed(1)}" y="${(y + size*0.35).toFixed(1)}" font-family="${fontFamily.replace(/"/g, "'")}" font-weight="700" font-size="${(size*1.1).toFixed(1)}" fill="${fillAttr}" text-anchor="middle" transform="rotate(${angle.toFixed(1)} ${x.toFixed(1)} ${y.toFixed(1)})">${word}</text>`;
     }
     return '';
   }
-
   function generateField(rng, p, W, H) {
     const rawElems = [];
     const c_sign = (rng() > 0.5 ? 1 : -1);
@@ -1181,6 +1686,34 @@
             val = trkIndex / tracks;
             keep = rng() <= p.thresh;
           }
+                    else if (state.pattern === 'spectralHorizon') {
+            const bands = Math.floor(10 + p.n * 3);
+            const bandIdx = Math.floor(rng() * bands);
+            x = (bandIdx + 0.5) / bands + (rng() - 0.5) * (0.6 / bands);
+            const isCenter = rng() > 0.32;
+            if (isCenter) {
+              y = 0.5 + (rng() - 0.5) * 0.08 * (p.noise + 0.2);
+            } else {
+              const sign = rng() > 0.5 ? 1 : -1;
+              y = 0.5 + sign * (0.10 + rng() * 0.38 * (p.thresh + 0.15));
+            }
+            val = Math.abs(x - 0.5) * 2;
+            angle = (rng() > 0.75 ? 90 : 0);
+            keep = rng() <= (p.thresh * 1.3);
+          }
+          else if (state.pattern === 'cymaticMatrix') {
+            const cols = Math.floor(14 + p.n * 2.5);
+            const rows = Math.floor(14 + p.m * 2.5);
+            const col = Math.floor(rng() * cols);
+            const row = Math.floor(rng() * rows);
+            x = (col + 0.5) / cols;
+            y = (row + 0.5) / rows;
+            const pN = Math.round(p.n);
+            const pM = Math.round(p.m);
+            val = Math.cos(pN * Math.PI * x) * Math.cos(pM * Math.PI * y) + c_sign * Math.cos(pM * Math.PI * x + c_phase) * Math.cos(pN * Math.PI * y);
+            angle = 0;
+            keep = Math.abs(val) <= (p.thresh * 1.4);
+          }
           else if (state.pattern === 'dataScatter') {
             x = rng();
             y = Math.pow(rng(), 1.5);
@@ -1220,6 +1753,7 @@
   }
 
   function render() {
+    try {
     const rng = mulberry32(state.seed);
     
     const p = {
@@ -1257,7 +1791,7 @@
     const fontFamily = document.getElementById('paramFontFamily').value;
     
     let txtSource = document.getElementById('customText').value.trim();
-    if(txtSource === '') txtSource = 'ITERATION';
+    if(txtSource === '') txtSource = 'SONOS festival de música electroacústica Diálogos sonoros Vibración Precisión rigurosa Rigor que se electrifica';
 
     const waveEnabled = document.getElementById('waveEnabled').checked;
     const waveStyle = document.getElementById('waveStyle').value;
@@ -1443,9 +1977,21 @@
     let defs = '';
     
     if (state.customFontBase64 && fontFamily.includes(state.customFontName)) {
-        defs += `<style>@font-face { font-family: '${state.customFontName}'; src: url('${state.customFontBase64}'); }</style>`;
+        defs += `<style>@font-face { font-family: '${state.customFontName}'; src: url('${state.customFontBase64}'); }
+  .draggable-word { cursor: grab; user-select: none; pointer-events: all; transition: opacity 0.15s; }
+  .draggable-word:hover text { opacity: 0.8; filter: drop-shadow(0 0 8px var(--accent)); }
+  .draggable-word:hover rect { opacity: 0.9; }
+  .draggable-word.dragging { cursor: grabbing !important; }
+
+</style>`;
     } else {
-        defs += `<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&amp;family=IBM+Plex+Mono:wght@500;700&amp;family=Inter:wght@700;900&amp;family=Space+Grotesk:wght@700&amp;family=Syne:wght@700;800&amp;family=Unbounded:wght@700;900&amp;display=swap');</style>`;
+        defs += `<style>@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&amp;family=IBM+Plex+Mono:wght@500;700&amp;family=Inter:wght@700;900&amp;family=Space+Grotesk:wght@700&amp;family=Syne:wght@700;800&amp;family=Unbounded:wght@700;900&amp;display=swap');
+  .draggable-word { cursor: grab; user-select: none; pointer-events: all; transition: opacity 0.15s; }
+  .draggable-word:hover text { opacity: 0.8; filter: drop-shadow(0 0 8px var(--accent)); }
+  .draggable-word:hover rect { opacity: 0.9; }
+  .draggable-word.dragging { cursor: grabbing !important; }
+
+</style>`;
     }
 
     colorsInUse.forEach(c => {
@@ -1483,6 +2029,12 @@
     let finalWaveLayer = '';
     let finalCrispGroup = crispGroup.join('');
     
+        defs += `<filter id="pillGlow" x="-50%" y="-50%" width="200%" height="200%">
+               <feGaussianBlur in="SourceGraphic" stdDeviation="6" />
+             </filter>
+             <filter id="sprayGlow" x="-50%" y="-50%" width="200%" height="200%">
+               <feGaussianBlur in="SourceGraphic" stdDeviation="9" />
+             </filter>`;
     if (blurAmt > 0 && blurredGroup.length > 0) {
       defs += `<filter id="dofBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${blurAmt}"/></filter>`;
       blurredForeground = `<g filter="url(#dofBlur)">${blurredGroup.join('')}</g>`;
@@ -1534,7 +2086,192 @@
       gridOverlay += `</g>`;
     }
 
-    const svgOut = `
+        // Renderizado de maquetación editorial con frases y misceláneas 100% independientes, modificables y borrables
+    let posterOverlay = '';
+    const showPosterLayout = document.getElementById('posterLayoutEnabled').checked;
+    const posterStyle = document.getElementById('posterLayoutStyle').value;
+
+    const escapeXml = (s) => (s||'').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+    const getWordTag = (key, customAttr) => {
+      const w = state.words[key] || { x: 50, y: 50, scale: 1.0, visible: true };
+      if (!w.visible) return 'style="display:none;" data-word-id="' + key + '"';
+      return `class="draggable-word" transform="translate(${w.x}, ${w.y}) scale(${w.scale})" data-word-id="${key}" ${customAttr||''}`;
+    };
+
+    if (showPosterLayout && posterStyle !== 'none') {
+      const isLightBg = (cBg === '#ffffff' || cBg === '#f6f4ee' || cBg === '#f4f3ef' || cBg === '#f2f1ed' || cBg === '#f0ece1' || cBg === '#faf7f0' || cBg === '#ede4d8' || cBg === '#dfff00' || cBg === '#e8e8e8');
+      const textColor = isLightBg ? '#080808' : '#ffffff';
+      let layoutInner = '';
+
+      const wSonos = state.words.sonos || { text: 'SONOS' };
+      const wFest = state.words.festival || { text: 'festival de música electroacústica' };
+      const wDial = state.words.dialogos || { text: 'Diálogos sonoros' };
+      const wVib = state.words.vibracion || { text: 'Vibración' };
+      const wPrec = state.words.precision || { text: 'Precisión rigurosa' };
+      const wRig = state.words.rigor || { text: 'Rigor que se electrifica' };
+      const wSym = state.words.misc_symbol || { text: '✱' };
+      const wBdg = state.words.misc_badge || { text: '2026 // EDICIÓN 01' };
+      const wLin = state.words.misc_lines || { visible: true };
+
+      if (posterStyle === 'swiss_header') {
+        layoutInner = `
+          <g font-family="'IBM Plex Mono', monospace" fill="${textColor}">
+            ${wLin.visible ? `
+            <g ${getWordTag('misc_lines')}>
+              <line x1="50" y1="80" x2="${W - 50}" y2="80" stroke="${textColor}" stroke-width="1.5" opacity="0.8" />
+              <line x1="50" y1="${H - 75}" x2="${W - 50}" y2="${H - 75}" stroke="${textColor}" stroke-width="1.5" opacity="0.8" />
+            </g>` : ''}
+            
+            <g ${getWordTag('sonos')}>
+              <text x="0" y="0" font-size="30" font-weight="700" letter-spacing="-0.03em">${escapeXml(wSonos.text)}</text>
+            </g>
+            <g ${getWordTag('festival')}>
+              <text x="0" y="0" font-size="12" font-weight="700" text-anchor="end" letter-spacing="0.04em">${escapeXml(wFest.text)}</text>
+            </g>
+            
+            <g ${getWordTag('dialogos')}>
+              <text x="0" y="0" font-size="11" font-weight="600" letter-spacing="0.08em">${escapeXml(wDial.text)}</text>
+            </g>
+            <g ${getWordTag('vibracion')}>
+              <text x="0" y="0" font-size="11" font-weight="700" letter-spacing="0.1em" fill="${cB || textColor}">${escapeXml(wVib.text)}</text>
+            </g>
+            <g ${getWordTag('precision')}>
+              <text x="0" y="0" font-size="10" font-weight="600">${escapeXml(wPrec.text)}</text>
+            </g>
+            <g ${getWordTag('rigor')}>
+              <text x="0" y="0" font-size="10" font-weight="700" text-anchor="end" letter-spacing="0.05em">${escapeXml(wRig.text)}</text>
+            </g>
+          </g>
+        `;
+      } else if (posterStyle === 'intervals') {
+        layoutInner = `
+          <g font-family="'Inter', sans-serif" fill="${textColor}">
+            <g ${getWordTag('misc_symbol')}>
+              <text x="0" y="0" font-size="36" font-weight="900">${escapeXml(wSym.text)}</text>
+            </g>
+            <g ${getWordTag('festival')}>
+              <text x="0" y="0" font-size="19" font-weight="800">${escapeXml(wFest.text)}</text>
+            </g>
+            <g ${getWordTag('misc_badge')}>
+              <text x="0" y="0" font-size="16" font-weight="800" text-anchor="end">${escapeXml(wBdg.text)}</text>
+            </g>
+            
+            <g ${getWordTag('dialogos')}>
+              <text x="0" y="0" font-size="17" font-weight="800">${escapeXml(wDial.text)}</text>
+            </g>
+            <g ${getWordTag('vibracion')}>
+              <text x="0" y="0" font-size="18" font-weight="900">${escapeXml(wVib.text)}</text>
+            </g>
+            <g ${getWordTag('precision')}>
+              <text x="0" y="0" font-size="17" font-weight="800">${escapeXml(wPrec.text)}</text>
+            </g>
+            <g ${getWordTag('rigor')}>
+              <text x="0" y="0" font-size="17" font-weight="800">${escapeXml(wRig.text)}</text>
+            </g>
+
+            <g ${getWordTag('sonos')}>
+              <text x="0" y="0" font-size="118" font-weight="900" letter-spacing="-0.04em">${escapeXml(wSonos.text)}</text>
+            </g>
+          </g>
+        `;
+      } else if (posterStyle === 'poster_target') {
+        layoutInner = `
+          <g font-family="'Space Grotesk', sans-serif" fill="${textColor}">
+            <g ${getWordTag('misc_symbol')}>
+              <circle cx="0" cy="0" r="3.5" fill="${textColor}" />
+            </g>
+            <g ${getWordTag('misc_badge')}>
+              <text x="0" y="0" font-size="10" font-weight="700" letter-spacing="0.1em">${escapeXml(wBdg.text)}</text>
+            </g>
+            
+            <g ${getWordTag('sonos')}>
+              <text x="0" y="0" font-size="42" font-weight="800">${escapeXml(wSonos.text)}</text>
+            </g>
+            <g ${getWordTag('festival')}>
+              <text x="0" y="0" font-size="15" font-weight="700" letter-spacing="0.04em">${escapeXml(wFest.text)}</text>
+            </g>
+            <g ${getWordTag('dialogos')}>
+              <text x="0" y="0" font-size="14" font-weight="600" opacity="0.85">${escapeXml(wDial.text)}</text>
+            </g>
+            <g ${getWordTag('vibracion')}>
+              <text x="0" y="0" font-size="16" font-weight="800" fill="${cA || textColor}">${escapeXml(wVib.text)}</text>
+            </g>
+            <g ${getWordTag('precision')}>
+              <text x="0" y="0" font-size="12" font-weight="600" opacity="0.8">${escapeXml(wPrec.text)}</text>
+            </g>
+            <g ${getWordTag('rigor')}>
+              <text x="0" y="0" font-size="11" font-weight="700" letter-spacing="0.06em">${escapeXml(wRig.text)}</text>
+            </g>
+          </g>
+        `;
+      } else if (posterStyle === 'poster_capsules') {
+        layoutInner = `
+          <g font-family="'Inter', sans-serif" fill="${textColor}">
+            ${wLin.visible ? `
+            <g ${getWordTag('misc_lines')}>
+              <rect x="35" y="35" width="${W - 70}" height="${H - 70}" fill="none" stroke="${textColor}" stroke-width="1.5" opacity="0.6" />
+            </g>` : ''}
+            
+            <g ${getWordTag('festival')}>
+              <text x="0" y="0" font-size="14" font-weight="700" letter-spacing="0.04em">${escapeXml(wFest.text)}</text>
+            </g>
+            <g ${getWordTag('dialogos')}>
+              <text x="0" y="0" font-size="14" font-weight="700" text-anchor="end">${escapeXml(wDial.text)}</text>
+            </g>
+            
+            <g ${getWordTag('sonos')}>
+              <rect x="-10" y="-32" width="280" height="46" rx="23" fill="#0a0a0a" />
+              <text x="18" y="2" font-size="24" font-weight="900" fill="#ffffff">${escapeXml(wSonos.text)}</text>
+            </g>
+
+            <g ${getWordTag('vibracion')}>
+              <rect x="-8" y="-26" width="210" height="38" rx="19" fill="${cA || '#ff0055'}" />
+              <text x="14" y="2" font-size="16" font-weight="900" fill="#ffffff">${escapeXml(wVib.text)}</text>
+            </g>
+
+            <g ${getWordTag('precision')}>
+              <rect x="-6" y="-20" width="240" height="32" rx="16" fill="${cB || '#00e5ff'}" />
+              <text x="14" y="3" font-size="13" font-weight="800" fill="#000000">${escapeXml(wPrec.text)}</text>
+            </g>
+            
+            <g ${getWordTag('rigor')}>
+              <text x="0" y="0" font-size="13" font-weight="800" letter-spacing="0.05em">${escapeXml(wRig.text)}</text>
+            </g>
+          </g>
+        `;
+      } else if (posterStyle === 'deconstructed') {
+        layoutInner = `
+          <g font-family="'IBM Plex Mono', monospace" fill="${textColor}" font-size="16" font-weight="700" letter-spacing="0.28em">
+            <g ${getWordTag('sonos')}>
+              <text x="0" y="0">${escapeXml(wSonos.text)}</text>
+            </g>
+            <g ${getWordTag('festival')}>
+              <text x="0" y="0">${escapeXml(wFest.text)}</text>
+            </g>
+            <g ${getWordTag('dialogos')}>
+              <text x="0" y="0" opacity="0.75">${escapeXml(wDial.text)}</text>
+            </g>
+            <g ${getWordTag('vibracion')}>
+              <text x="0" y="0" font-size="20" fill="${cA || '#ff3b00'}">${escapeXml(wVib.text)}</text>
+            </g>
+            <g ${getWordTag('precision')}>
+              <text x="0" y="0">${escapeXml(wPrec.text)}</text>
+            </g>
+            <g ${getWordTag('rigor')}>
+              <text x="0" y="0">${escapeXml(wRig.text)}</text>
+            </g>
+          </g>
+        `;
+      }
+
+      posterOverlay = `
+        <g id="editorialPoster" style="user-select: none;">
+          ${layoutInner}
+        </g>
+      `;
+    }
+const svgOut = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="100%" height="100%" style="background-color: ${isTrans ? 'transparent' : cBg};">
         <defs>${defs}</defs>
         ${finalWaveLayer}
@@ -1543,10 +2280,18 @@
            ${finalCrispGroup}
         </g>
         ${gridOverlay}
+        ${posterOverlay}
       </svg>
     `;
 
     document.getElementById('svgHost').innerHTML = svgOut;
+    } catch(renderErr) {
+      console.error('Error in render():', renderErr);
+      const host = document.getElementById('svgHost');
+      if (host) {
+        host.innerHTML = '<div style="color:#ff5252; padding:30px; font-family:IBM Plex Mono, monospace; text-align:center;"><div style="font-size:18px; font-weight:bold; margin-bottom:10px;">ERROR EN EL MOTOR GENERATIVO</div><div style="font-size:12px; opacity:0.85; margin-bottom:16px;">' + renderErr.message + '</div><button onclick="applyStudioPreset(\'sonos_targets\')" style="background:#222; color:#fff; border:1px solid #444; padding:8px 16px; border-radius:4px; cursor:pointer;">Restablecer a Preset Seguro</button></div>';
+      }
+    }
   }
 
   function getSvgBlob() {
@@ -1556,6 +2301,18 @@
     if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
         source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
     }
+    source = '<?xml version="1.0" standalone="no"?>\n' + source;
+    return new Blob([source], {type:"image/svg+xml;charset=utf-8"});
+  }
+
+  function getSafeSvgBlobForRaster() {
+    const svgEl = document.querySelector('#svgHost svg');
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(svgEl);
+    if(!source.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)){
+        source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+    }
+    source = source.replace(/<style>@import\s+url\([^)]+\);?<\/style>/gi, '');
     source = '<?xml version="1.0" standalone="no"?>\n' + source;
     return new Blob([source], {type:"image/svg+xml;charset=utf-8"});
   }
@@ -1578,9 +2335,20 @@
     const isTrans = document.getElementById('paramTrans').checked;
     const cBg = document.getElementById('colBg').value;
     
-    const svgBlob = getSvgBlob();
+    const svgBlob = getSafeSvgBlobForRaster();
     const url = URL.createObjectURL(svgBlob);
     const img = new Image();
+    
+    const cleanup = () => {
+      btn.innerText = originalText;
+      btn.style.pointerEvents = 'auto';
+      URL.revokeObjectURL(url);
+    };
+
+    img.onerror = () => {
+      cleanup();
+      alert('Aviso: Utiliza la descarga SVG vectorial directa para máxima fidelidad.');
+    };
     
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -1594,14 +2362,13 @@
       URL.revokeObjectURL(url);
       
       canvas.toBlob(blob => {
+        if (!blob) { cleanup(); return; }
         const durl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = durl; a.download = `nodal-render-${Date.now()}.png`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(durl);
-        
-        btn.innerText = originalText;
-        btn.style.pointerEvents = 'auto';
+        cleanup();
       }, 'image/png', 1.0);
     };
     img.src = url;
@@ -1616,9 +2383,20 @@
     const res = parseInt(document.getElementById('exportRes').value);
     const cBg = document.getElementById('colBg').value;
     
-    const svgBlob = getSvgBlob();
+    const svgBlob = getSafeSvgBlobForRaster();
     const url = URL.createObjectURL(svgBlob);
     const img = new Image();
+    
+    const cleanup = () => {
+      btn.innerText = originalText;
+      btn.style.pointerEvents = 'auto';
+      URL.revokeObjectURL(url);
+    };
+
+    img.onerror = () => {
+      cleanup();
+      alert('Aviso: Utiliza la descarga SVG vectorial directa para máxima fidelidad.');
+    };
     
     img.onload = () => {
       const canvas = document.createElement('canvas');
@@ -1630,22 +2408,251 @@
       URL.revokeObjectURL(url);
       
       canvas.toBlob(blob => {
+        if (!blob) { cleanup(); return; }
         const durl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = durl; a.download = `nodal-render-${Date.now()}.jpg`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         URL.revokeObjectURL(durl);
-        
-        btn.innerText = originalText;
-        btn.style.pointerEvents = 'auto';
+        cleanup();
       }, 'image/jpeg', 0.95);
     };
     img.src = url;
   });
 
+  // ========================================================
+  // Sistema de interacción, edición y arrastre independiente
+  // ========================================================
+  function syncWordSlidersToSelected() {
+    const key = document.getElementById('selectedWordToMove').value;
+    const w = state.words[key] || { text: '', x: 0, y: 0, scale: 1.0, visible: true };
+    
+    document.getElementById('phraseTextInput').value = w.text || '';
+    document.getElementById('wordPosX').value = w.x;
+    document.getElementById('valWordX').innerText = w.x;
+    document.getElementById('wordPosY').value = w.y;
+    document.getElementById('valWordY').innerText = w.y;
+    document.getElementById('wordScale').value = w.scale || 1.0;
+    document.getElementById('valWordScale').innerText = (w.scale || 1.0).toFixed(2);
+
+    const btnVis = document.getElementById('btnToggleWordVis');
+    if (w.visible) {
+      btnVis.style.background = '#d32f2f';
+      btnVis.innerText = 'BORRAR';
+      btnVis.title = 'Borrar u ocultar este elemento del afiche';
+    } else {
+      btnVis.style.background = '#388e3c';
+      btnVis.innerText = 'RESTAURAR';
+      btnVis.title = 'Volver a mostrar este elemento en el afiche';
+    }
+  }
+
+  document.getElementById('selectedWordToMove').addEventListener('change', syncWordSlidersToSelected);
+
+  // Edición directa del texto de cada frase
+  let wordTextDebounce;
+  document.getElementById('phraseTextInput').addEventListener('input', e => {
+    const key = document.getElementById('selectedWordToMove').value;
+    if (state.words[key]) {
+      state.words[key].text = e.target.value;
+      renderDebounced();
+      clearTimeout(wordTextDebounce);
+      wordTextDebounce = setTimeout(recordHistory, 500);
+    }
+  });
+
+  // Borrar / Ocultar o Restaurar frase individual
+  document.getElementById('btnToggleWordVis').addEventListener('click', () => {
+    const key = document.getElementById('selectedWordToMove').value;
+    if (state.words[key]) {
+      state.words[key].visible = !state.words[key].visible;
+      syncWordSlidersToSelected();
+      render();
+      recordHistory();
+    }
+  });
+
+  // Restaurar todas las frases borradas
+  document.getElementById('btnRestoreAllWords').addEventListener('click', () => {
+    Object.keys(state.words).forEach(k => {
+      state.words[k].visible = true;
+    });
+    syncWordSlidersToSelected();
+    render();
+    recordHistory();
+  });
+
+  document.getElementById('wordPosX').addEventListener('input', e => {
+    const key = document.getElementById('selectedWordToMove').value;
+    const val = parseInt(e.target.value);
+    document.getElementById('valWordX').innerText = val;
+    if (state.words[key]) {
+      state.words[key].x = val;
+      updateWordTransformDOM(key);
+    }
+  });
+  document.getElementById('wordPosX').addEventListener('change', recordHistory);
+
+  document.getElementById('wordPosY').addEventListener('input', e => {
+    const key = document.getElementById('selectedWordToMove').value;
+    const val = parseInt(e.target.value);
+    document.getElementById('valWordY').innerText = val;
+    if (state.words[key]) {
+      state.words[key].y = val;
+      updateWordTransformDOM(key);
+    }
+  });
+  document.getElementById('wordPosY').addEventListener('change', recordHistory);
+
+  document.getElementById('wordScale').addEventListener('input', e => {
+    const key = document.getElementById('selectedWordToMove').value;
+    const sc = parseFloat(e.target.value);
+    document.getElementById('valWordScale').innerText = sc.toFixed(2);
+    if (state.words[key]) {
+      state.words[key].scale = sc;
+      updateWordTransformDOM(key);
+    }
+  });
+  document.getElementById('wordScale').addEventListener('change', recordHistory);
+
+  function updateWordTransformDOM(key) {
+    const wordEl = document.querySelector(`[data-word-id="${key}"]`);
+    if (wordEl && state.words[key]) {
+      wordEl.setAttribute('transform', `translate(${state.words[key].x}, ${state.words[key].y}) scale(${state.words[key].scale})`);
+    }
+  }
+
+  document.getElementById('btnResetWordPos').addEventListener('click', () => {
+    const style = document.getElementById('posterLayoutStyle').value;
+    if (defaultWordLayouts[style]) {
+      // Restablecer posiciones y escalas conservando textos editados
+      Object.keys(defaultWordLayouts[style]).forEach(k => {
+        if (!state.words[k]) state.words[k] = {};
+        state.words[k].x = defaultWordLayouts[style][k].x;
+        state.words[k].y = defaultWordLayouts[style][k].y;
+        state.words[k].scale = defaultWordLayouts[style][k].scale;
+      });
+    }
+    syncWordSlidersToSelected();
+    render();
+    recordHistory();
+  });
+
+  function setupPosterDraggable() {
+    const svgHost = document.getElementById('svgHost');
+    let isDragging = false;
+    let activeKey = null;
+    let startMouseX = 0, startMouseY = 0;
+    let initialX = 0, initialY = 0;
+
+    const getWordTarget = (el) => {
+      while (el && el !== svgHost) {
+        if (el.getAttribute && el.getAttribute('data-word-id')) return el.getAttribute('data-word-id');
+        if (el.dataset && el.dataset.wordId) return el.dataset.wordId;
+        el = el.parentElement || el.parentNode;
+      }
+      return null;
+    };
+
+    const startDrag = (clientX, clientY, target) => {
+      const wordId = getWordTarget(target);
+      if (!wordId) return false;
+      
+      isDragging = true;
+      activeKey = wordId;
+      if (!state.words[activeKey]) return false;
+
+      document.getElementById('selectedWordToMove').value = activeKey;
+      syncWordSlidersToSelected();
+
+      startMouseX = clientX;
+      startMouseY = clientY;
+      initialX = state.words[activeKey].x;
+      initialY = state.words[activeKey].y;
+
+      const wordEl = svgHost.querySelector(`[data-word-id="${activeKey}"]`);
+      if (wordEl) wordEl.classList.add('dragging');
+      return true;
+    };
+
+    const moveDrag = (clientX, clientY) => {
+      if (!isDragging || !activeKey || !state.words[activeKey]) return;
+      const svg = svgHost.querySelector('svg');
+      if (!svg) return;
+      const rect = svg.getBoundingClientRect();
+      const scaleRatio = state.W / rect.width;
+      const dx = (clientX - startMouseX) * scaleRatio;
+      const dy = (clientY - startMouseY) * scaleRatio;
+
+      let newX = Math.round(initialX + dx);
+      let newY = Math.round(initialY + dy);
+      newX = Math.max(-250, Math.min(1250, newX));
+      newY = Math.max(-250, Math.min(1250, newY));
+
+      state.words[activeKey].x = newX;
+      state.words[activeKey].y = newY;
+      document.getElementById('wordPosX').value = newX;
+      document.getElementById('valWordX').innerText = newX;
+      document.getElementById('wordPosY').value = newY;
+      document.getElementById('valWordY').innerText = newY;
+
+      updateWordTransformDOM(activeKey);
+    };
+
+    const endDrag = () => {
+      if (isDragging) {
+        isDragging = false;
+        if (activeKey) {
+          const wordEl = svgHost.querySelector(`[data-word-id="${activeKey}"]`);
+          if (wordEl) wordEl.classList.remove('dragging');
+        }
+        activeKey = null;
+        renderDebounced();
+        recordHistory();
+      }
+    };
+
+    svgHost.addEventListener('mousedown', e => {
+      if (startDrag(e.clientX, e.clientY, e.target)) e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+    window.addEventListener('mouseup', endDrag);
+
+    svgHost.addEventListener('touchstart', e => {
+      if (e.touches.length === 1) {
+        if (startDrag(e.touches[0].clientX, e.touches[0].clientY, e.target)) e.preventDefault();
+      }
+    }, { passive: false });
+    window.addEventListener('touchmove', e => {
+      if (isDragging && e.touches.length === 1) {
+        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault();
+      }
+    }, { passive: false });
+    window.addEventListener('touchend', endDrag);
+  }
+  // Event listeners for editorial layout
+  ['posterLayoutEnabled', 'posterLayoutStyle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('change', () => {
+        const style = document.getElementById('posterLayoutStyle').value;
+        if (defaultWordLayouts[style]) {
+          state.words = JSON.parse(JSON.stringify(defaultWordLayouts[style]));
+          syncWordSlidersToSelected();
+        }
+        render();
+        recordHistory();
+      });
+    }
+  });
+
   loadSavedCustomPresets();
   updateControlsState();
-  render();
+  setupPosterDraggable();
+  
+  // INICIO IMPACTANTE: Inicia automáticamente con el preset estético 'sonos_targets'
+  applyStudioPreset('sonos_targets');
   recordHistory();
 </script>
 </body>
